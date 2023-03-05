@@ -1,9 +1,9 @@
 #/bin/bash
 
 function colors {
-  GREEN="\e[32m"
-  RED="\e[39m"
-  NORMAL="\e[0m"
+YELLOW="\e[33m"
+BLACK="\e[30m"
+ENDCOLOR="\e[0m"
 }
 
 function logo {
