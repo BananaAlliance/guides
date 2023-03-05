@@ -1,14 +1,8 @@
 #/bin/bash
 
-function colors {
-YELLOW="\e[33m"
-BLACK="\e[30m"
-ENDCOLOR="\e[0m"
-}
-
-function logo {
-  curl -s https://raw.githubusercontent.com/BananaAlliance/tools/main/logo.sh | bash
-}
+echo "-----------------------------------------------------------------------------"
+curl -s https://raw.githubusercontent.com/BananaAlliance/tools/main/logo.sh | bash
+echo "-----------------------------------------------------------------------------"
 
 function line {
   echo -e "${GREEN}-----------------------------------------------------------------------------${NORMAL}"
