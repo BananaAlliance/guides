@@ -14,7 +14,7 @@ echo "Устанавливаем софт"
 echo "-----------------------------------------------------------------------------"
 sudo apt update && sudo apt upgrade -y
 curl -s https://raw.githubusercontent.com/BananaAlliance/tools/main/ufw.sh | bash &>/dev/null
-curl -s https://raw.githubusercontent.com/DOUBLE-TOP/tools/main/go.sh | bash &>/dev/null
+curl -s https://raw.githubusercontent.com/BananaAlliance/tools/main/go.sh | bash &>/dev/null
 sudo apt install --fix-broken -y &>/dev/null
 sudo apt install nano mc wget build-essential git jq make gcc tmux chrony lz4 unzip ncdu htop -y &>/dev/null
 source .profile
