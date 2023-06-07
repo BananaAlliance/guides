@@ -4,10 +4,6 @@ echo "--------------------------------------------------------------------------
 curl -s https://raw.githubusercontent.com/BananaAlliance/tools/main/logo.sh | bash
 echo "-----------------------------------------------------------------------------"
 
-function line {
-  echo -e "${GREEN}-----------------------------------------------------------------------------${NORMAL}"
-}
-
 function delete {
   sudo systemctl stop massa
   rm -rf massa_TEST.2*
@@ -15,8 +11,8 @@ function delete {
 }
 
 function install {
-  wget https://github.com/massalabs/massa/releases/download/TEST.22.2/massa_TEST.22.2_release_linux.tar.gz
-  tar zxvf massa_TEST.22.2_release_linux.tar.gz -C $HOME/
+  wget https://github.com/massalabs/massa/releases/download/TEST.23.0/massa_TEST.23.0_release_linux.tar.gz
+  tar zxvf massa_TEST.23.0_release_linux.tar.gz -C $HOME/
 }
 
 function routable_ip {

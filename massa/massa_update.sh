@@ -15,13 +15,13 @@ function get_env {
 
 function massa_backup {
 	cd $HOME
-	if [ ! -d $HOME/massa_backup20/ ]; then
-		mkdir -p $HOME/massa_backup21
-		cp $HOME/massa/massa-node/config/node_privkey.key $HOME/massa_backup21/
-		cp $HOME/massa/massa-client/wallet.dat $HOME/massa_backup21/
+	if [ ! -d $HOME/massa_backup22/ ]; then
+		mkdir -p $HOME/massa_backup22
+		cp $HOME/massa/massa-node/config/node_privkey.key $HOME/massa_backup22/
+		cp $HOME/massa/massa-client/wallet.dat $HOME/massa_backup22/
 	fi
-	if [ ! -e $HOME/massa_backup21.tar.gz ]; then
-		tar cvzf massa_backup.tar21.gz massa_backup21
+	if [ ! -e $HOME/massa_backup22.tar.gz ]; then
+		tar cvzf massa_backup.tar22.gz massa_backup22
 	fi
 }
 
@@ -32,8 +32,8 @@ function delete {
 }
 
 function install {
-    wget https://github.com/massalabs/massa/releases/download/TEST.22.2/massa_TEST.22.2_release_linux.tar.gz
-    tar zxvf massa_TEST.22.2_release_linux.tar.gz -C $HOME/
+    wget https://github.com/massalabs/massa/releases/download/TEST.23.0/massa_TEST.23.0_release_linux.tar.gz
+    tar zxvf massa_TEST.23.0_release_linux.tar.gz -C $HOME/
 }
 
 function routable_ip {
