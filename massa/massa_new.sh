@@ -11,8 +11,8 @@ function delete {
 }
 
 function install {
-  wget https://github.com/massalabs/massa/releases/download/TEST.23.1/massa_TEST.23.1_release_linux.tar.gz
-  tar zxvf massa_TEST.23.1_release_linux.tar.gz -C $HOME/
+  wget https://github.com/massalabs/massa/releases/download/TEST.23.2/massa_TEST.23.2_release_linux.tar.gz
+  tar zxvf massa_TEST.23.2_release_linux.tar.gz -C $HOME/
 }
 
 function routable_ip {
@@ -40,7 +40,7 @@ function replace_bootstraps {
 
 function massa_pass {
   if [ ! ${massa_pass} ]; then
-  echo "Введите пароль (придумайте)"
+  echo "придумайте пароль"
   line
   read massa_pass
   echo "export massa_pass=$massa_pass" >> $HOME/.profile
