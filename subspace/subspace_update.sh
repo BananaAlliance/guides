@@ -12,6 +12,11 @@ function get_vars {
   export PLOT_SIZE=$(cat $HOME/subspace_docker/docker-compose.yml | grep "\-\-plot-size" | awk -F\" '{print $4}')
 }
 
+function delete_old {
+  docker-compose -f $HOME/subspace_docker/docker-compose.yml down -v &>/dev/null
+  docker volume rm subspace_docker_subspace-farmer subspace_docker_subspace-node &>/dev/null
+}
+
 function eof_docker_compose {
   sudo tee <<EOF >/dev/null $HOME/subspace_docker/docker-compose.yml
   version: "3.7"
