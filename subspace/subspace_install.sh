@@ -9,6 +9,11 @@ NC='\033[0m' # No Color
 DIR="$HOME/subspace-pulsar"
 PULSAR="$DIR/pulsar"
 SERVICE="$DIR/subspace-pulsar.service"
+CONFIG_URL="https://github.com/BananaAlliance/guides/raw/main/subspace/config.sh"
+
+# Скачивание файла конфигурации
+wget -q -O $DIR/config.sh $CONFIG_URL
+source $DIR/config.sh
 
 # Функция для логирования
 log() {
@@ -64,7 +69,7 @@ create_folders() {
 # Скачивание файла
 download_file() {
     echo_and_log "Скачивание файла..." $YELLOW
-    wget -q -O $PULSAR "https://github.com/subspace/pulsar/releases/download/v0.6.2-alpha/pulsar-ubuntu-x86_64-skylake-v0.6.2-alpha"
+    wget -q -O $PULSAR $PULSAR_URL
     check_success
     sleep 1
 }
@@ -161,6 +166,23 @@ uninstall_node() {
     fi
 }
 
+# Обновление ноды
+update_node() {
+    echo_and_log "Проверка версии..." $YELLOW
+    INSTALLED_VERSION=$($PULSAR --version | awk '{print $2}')
+    if [ $INSTALLED_VERSION == $CURRENT_VERSION ]; then
+        echo_and_log "У вас уже установлена последняя версия." $GREEN
+        exit 0
+    fi
+    sudo systemctl stop subspace-pulsar.service
+    echo_and_log "Обновление ноды..." $YELLOW
+    download_file
+    chmod +x $PULSAR
+    check_success
+    echo_and_log "Перезапуск сервиса..." $YELLOW
+    sudo systemctl restart subspace-pulsar
+    check_success
+}
 
 # Запуск установки ноды
 install_node() {
@@ -181,6 +203,9 @@ case $1 in
         ;;
     uninstall)
         uninstall_node
+        ;;
+    update)
+        update_node
         ;;
     *)
         echo_and_log "Неверный аргумент. Используйте 'install' для установки или 'uninstall' для удаления." $RED
