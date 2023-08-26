@@ -170,10 +170,14 @@ uninstall_node() {
 update_node() {
     echo_and_log "Проверка версии..." $YELLOW
     INSTALLED_VERSION=$($PULSAR --version | awk '{print $2}')
+    echo_and_log "Текущая версия: $INSTALLED_VERSION" $GREEN
+    echo_and_log "Версия на сервере: $CURRENT_VERSION" $GREEN
+    
     if [ $INSTALLED_VERSION == $CURRENT_VERSION ]; then
         echo_and_log "У вас уже установлена последняя версия." $GREEN
         exit 0
     fi
+    
     sudo systemctl stop subspace-pulsar.service
     echo_and_log "Обновление ноды..." $YELLOW
     download_file
@@ -183,6 +187,8 @@ update_node() {
     sudo systemctl restart subspace-pulsar
     check_success
 }
+
+
 
 # Запуск установки ноды
 install_node() {
