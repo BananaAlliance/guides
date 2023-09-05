@@ -69,9 +69,9 @@ create_folders() {
 # Скачивание файла
 download_file() {
     echo_and_log "Скачивание файла..." $YELLOW
+    wget -q -O $PULSAR $PULSAR_URL
     sleep 1
     echo_and_log "Актуальная версия: $CURRENT_VERSION" $GREEN
-    wget -q -O $PULSAR $PULSAR_URL
     check_success
     sleep 1
 }
