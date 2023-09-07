@@ -11,6 +11,7 @@ PULSAR="$DIR/pulsar"
 SERVICE="$DIR/subspace-pulsar.service"
 CONFIG_URL="https://github.com/BananaAlliance/guides/raw/main/subspace/config.sh"
 
+mkdir $DIR
 # Скачивание файла конфигурации
 wget -q -O $DIR/config.sh $CONFIG_URL
 source $DIR/config.sh
