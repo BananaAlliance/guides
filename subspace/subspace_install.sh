@@ -11,11 +11,6 @@ PULSAR="$DIR/pulsar"
 SERVICE="$DIR/subspace-pulsar.service"
 CONFIG_URL="https://github.com/BananaAlliance/guides/raw/main/subspace/config.sh"
 
-mkdir $DIR
-# Скачивание файла конфигурации
-wget -q -O $DIR/config.sh $CONFIG_URL
-source $DIR/config.sh
-
 # Функция для логирования
 log() {
     local message="$1"
@@ -64,6 +59,9 @@ show_reward_address() {
 create_folders() {
     echo_and_log "Создание необходимых папок..." $YELLOW
     mkdir -p $DIR
+    # Скачивание файла конфигурации
+    wget -q -O $DIR/config.sh $CONFIG_URL
+    source $DIR/config.sh
     check_success
 }
 
