@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Установим интервал обновления в 2 секунды
-interval=10
+interval=2
 
 # Предыдущий текущий блок (для расчета скорости)
 previous_block=0
@@ -16,8 +16,22 @@ while true; do
     # Прочитать этот файл
     # Извлекаем информацию о текущем блоке и финальном блоке из последней строки файла логов
     last_line=$(tail -n 1 $HOME/.local/share/pulsar/logs/$latest_log_file)
+
+    # Проверка на завершение синхронизации
+    if [[ ! $last_line == *"Syncing"* ]]; then
+        echo "Синхронизация завершилась или не выполняется"
+        break
+    fi
+
     current_block=$(echo $last_line | grep -o -E 'best: #([0-9]+)' | cut -d'#' -f2)
     target_block=$(echo $last_line | grep -o -E 'target=#([0-9]+)' | cut -d'#' -f2)
+
+    # Проверяем, что мы получили нужные значения
+    if [[ -z "$current_block" || -z "$target_block" ]]; then
+        echo "Не удалось извлечь информацию из файла лога. Ждем обновления..."
+        sleep $interval
+        continue
+    fi
 
     # Определить разницу
     difference=$((target_block - current_block))
