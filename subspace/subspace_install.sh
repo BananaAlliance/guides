@@ -261,14 +261,20 @@ logs() {
     tail -f $HOME/.local/share/pulsar/logs/$latest_log_file
 }
 
-print_node_name() {
-    # Извлекаем значение name из settings.toml
+print_node_info() {
+    # Извлекаем значения из settings.toml
     node_name=$(grep "name = " $HOME/.config/pulsar/settings.toml | cut -d'"' -f2)
-    
-    echo "==============================="
-    echo "   Название вашей ноды: $node_name"
-    echo "==============================="
+    farm_size=$(grep "farm_size = " $HOME/.config/pulsar/settings.toml | cut -d'"' -f2)
+    reward_address=$(grep "reward_address = " $HOME/.config/pulsar/settings.toml | cut -d'"' -f2)
+
+    # Выводим значения в красивом формате
+    echo "======================================="
+    echo "   Название узла: $node_name"
+    echo "   Размер плота: $farm_size"
+    echo "   Адрес для наград: $reward_address"
+    echo "======================================="
 }
+
 
 # Запуск установки ноды
 install_node() {
@@ -284,8 +290,8 @@ install_node() {
 
 # Определение действия: установка или удаление
 case $1 in
-    show_name)
-        print_node_name
+    show_info)
+        print_node_info
         ;;
     logs)
         logs
