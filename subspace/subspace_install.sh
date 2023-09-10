@@ -261,6 +261,16 @@ logs() {
     tail -f $HOME/.local/share/pulsar/logs/$latest_log_file
 }
 
+print_node_name() {
+    # Извлекаем значение name из settings.toml
+    node_name=$(grep "name = " $HOME/.config/pulsar/settings.toml | cut -d'"' -f2)
+    
+    # Выводим значение в красивом формате
+    echo "==============================="
+    echo "   Название вашей ноды: $node_name"
+    echo "==============================="
+}
+
 # Запуск установки ноды
 install_node() {
     pre_install_check
@@ -275,6 +285,9 @@ install_node() {
 
 # Определение действия: установка или удаление
 case $1 in
+    show_name)
+        print_node_name
+        ;;
     logs)
         logs
         ;;
