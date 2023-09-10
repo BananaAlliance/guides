@@ -292,7 +292,7 @@ update_farm_size() {
             echo "Ошибка: введите правильный размер плота!"
         fi
     done
-    sudo systemctl start subspace-pulsar.service
+    sudo systemctl restart subspace-pulsar.service
 }
 
 
