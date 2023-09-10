@@ -214,7 +214,7 @@ check_sync() {
             if [[ ! -z "$plotting_percentage" ]]; then
                 echo "Процесс плоттинга: $plotting_percentage"
             else
-                echo "Не удалось определить состояние плоттинга. Ждем обновления..."
+                echo "Не удалось определить состояние синхронизации. Ждем обновления..."
             fi
         fi
 
@@ -275,6 +275,26 @@ print_node_info() {
     echo "======================================="
 }
 
+update_farm_size() {
+    sudo systemctl stop subspace-pulsar.service
+    while true; do
+        # Запрос на ввод размера плота
+        read -p "Введите размер плота в GB (только цифры): " user_input
+
+        # Проверка на то, что введенная строка содержит только цифры
+        if [[ $user_input =~ ^[0-9]+$ ]] && [ "$user_input" -gt 0 ]; then
+            # Замена размера плота в файле settings.toml
+            sed -i "s/farm_size = \".* GB\"/farm_size = \"$user_input.0 GB\"/g" $HOME/.config/pulsar/settings.toml
+            
+            echo "Размер плота был обновлен на $user_input.0 GB"
+            break
+        else
+            echo "Ошибка: введите правильный размер плота!"
+        fi
+    done
+    sudo systemctl start subspace-pulsar.service
+}
+
 
 # Запуск установки ноды
 install_node() {
@@ -290,6 +310,9 @@ install_node() {
 
 # Определение действия: установка или удаление
 case $1 in
+    change_plot)
+        update_farm_size
+        ;;
     show_info)
         print_node_info
         ;;
