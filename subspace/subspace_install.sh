@@ -277,6 +277,8 @@ print_node_info() {
 
 update_farm_size() {
     sudo systemctl stop subspace-pulsar.service
+    current_size=$(grep "farm_size" $HOME/.config/pulsar/settings.toml | cut -d'"' -f2)
+    echo "Текущий размер плота: $current_size"
     while true; do
         # Запрос на ввод размера плота
         read -p "Введите размер плота в GB (только цифры): " user_input
