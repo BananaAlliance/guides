@@ -11,6 +11,12 @@ PULSAR="$DIR/pulsar"
 SERVICE="$DIR/subspace-pulsar.service"
 CONFIG_URL="https://github.com/BananaAlliance/guides/raw/main/subspace/config.sh"
 
+# Установим интервал обновления в 2 секунды
+interval=7
+
+# Предыдущий текущий блок (для расчета скорости)
+previous_block=0
+
 # Функция для логирования
 log() {
     local message="$1"
@@ -167,6 +173,56 @@ uninstall_node() {
     fi
 }
 
+check_sync() {
+    while true; do
+        clear
+
+        latest_log_file=$(ls -t $HOME/.local/share/pulsar/logs | head -n 1)
+        last_line=$(tail -n 1 $HOME/.local/share/pulsar/logs/$latest_log_file)
+
+        if [[ $last_line == *"Syncing"* ]]; then
+            current_block=$(echo $last_line | grep -o -E 'best: #([0-9]+)' | cut -d'#' -f2)
+            target_block=$(echo $last_line | grep -o -E 'target=#([0-9]+)' | cut -d'#' -f2)
+            difference=$((target_block - current_block))
+
+            speed=$((current_block - previous_block))
+            if [ $speed -ne 0 ]; then
+                time_left_seconds=$(($difference / $speed * $interval))
+                time_left_hours=$(($time_left_seconds / 3600))
+                time_left_minutes=$(($time_left_seconds % 3600 / 60))
+                echo "Оставшееся время: примерно $time_left_hours часов $time_left_minutes минут"
+            else
+                echo "Синхронизация не продвигается"
+            fi
+
+            progress=$((100 * $current_block / $target_block))
+            bar_length=50
+            progress_bar_length=$(($progress * $bar_length / 100))
+            progress_bar=$(printf "%-${progress_bar_length}s" "=")
+            spaces=$(printf "%-$(($bar_length - $progress_bar_length))s" " ")
+            echo -e "Прогресс: [${progress_bar// /█}${spaces}] $progress%"
+
+            echo "Текущий блок: $current_block"
+            echo "Финальный блок: $target_block"
+            echo "Оставшиеся блоки для синхронизации: $difference"
+
+            previous_block=$current_block
+        else
+            # Мониторим плоттинг
+            plotting_info=$(tail $HOME/.local/share/pulsar/logs/$latest_log_file | grep "plotting" | head -n 1)
+            plotting_percentage=$(echo $plotting_info | grep -o -E 'Sector plotted successfully \(([0-9.]+)%\)')
+            if [[ ! -z "$plotting_percentage" ]]; then
+                echo "Процесс плоттинга: $plotting_percentage"
+            else
+                echo "Не удалось определить состояние плоттинга. Ждем обновления..."
+            fi
+        fi
+
+        sleep $interval
+    done
+}
+
+
 # Обновление ноды
 update_node() {
     echo_and_log "Проверка версии..." $YELLOW
@@ -193,6 +249,17 @@ update_node() {
 }
 
 
+logs() {
+    latest_log_file=$(ls -t $HOME/.local/share/pulsar/logs | head -n 1)
+
+    # Выводим оповещение
+    echo -e "${YELLOW}Сейчас откроются логи, вы можете их закрыть комбинацией CTRL+C. Нажмите ENTER или любую клавишу, чтобы продолжить.${NC}"
+
+    # Ожидаем нажатия пользователем клавиши
+    read -n 1 -s
+
+    tail -f $HOME/.local/share/pulsar/logs/$latest_log_file
+}
 
 # Запуск установки ноды
 install_node() {
@@ -208,6 +275,12 @@ install_node() {
 
 # Определение действия: установка или удаление
 case $1 in
+    logs)
+        logs
+        ;;
+    check_sync)
+        check_sync
+        ;;
     install)
         install_node
         ;;
@@ -218,6 +291,6 @@ case $1 in
         update_node
         ;;
     *)
-        echo_and_log "Неверный аргумент. Используйте 'install' для установки или 'uninstall' для удаления." $RED
+        echo_and_log "Неверный аргумент. Используйте 'install' для установки или 'uninstall' для удаления, 'update' для обновления, 'check_sync' для проверки статуса синхронизации" $RED
         ;;
 esac
