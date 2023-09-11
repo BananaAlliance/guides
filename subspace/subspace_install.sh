@@ -209,7 +209,7 @@ check_sync() {
             previous_block=$current_block
         else
             # Мониторим плоттинг
-            plotting_info=$(tail $HOME/.local/share/pulsar/logs/$latest_log_file | grep "plotting" | head -n 1)
+            plotting_info=$(cat $HOME/.local/share/pulsar/logs/$latest_log_file | grep "plotted" | tail -n 1)
             plotting_percentage=$(echo $plotting_info | grep -o -E 'Sector plotted successfully \(([0-9.]+)%\)')
             if [[ ! -z "$plotting_percentage" ]]; then
                 echo "Процесс плоттинга: $plotting_percentage"
