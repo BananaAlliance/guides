@@ -225,6 +225,8 @@ check_sync() {
 
 # Обновление ноды
 update_node() {
+    wget -q -O $DIR/config.sh $CONFIG_URL
+    source $DIR/config.sh
     echo_and_log "Проверка версии..." $YELLOW
     INSTALLED_VERSION=$($PULSAR --version | awk '{print $2}')
     echo_and_log "Текущая версия: $INSTALLED_VERSION" $GREEN
