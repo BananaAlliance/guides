@@ -293,7 +293,7 @@ print_node_info() {
 
 update_farm_size() {
     sudo systemctl stop subspace-pulsar.service
-    current_size=$(grep "farm_size" $HOME/.config/pulsar/settings.toml | cut -d'"' -f2)
+    current_size=$($HOME/subspace-pulsar/pulsar info | grep "You have pledged to the network:" | awk '{print $7}')
     echo "Текущий размер плота: $current_size"
     sudo rm $HOME/.local/share/pulsar/farms/plot.bin
     while true; do
