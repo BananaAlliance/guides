@@ -269,13 +269,27 @@ print_node_info() {
     farm_size=$(grep "farm_size = " $HOME/.config/pulsar/settings.toml | cut -d'"' -f2)
     reward_address=$(grep "reward_address = " $HOME/.config/pulsar/settings.toml | cut -d'"' -f2)
 
+    # Извлекаем информацию из вывода команды
+    farmer_status=$($HOME/subspace-pulsar/pulsar info | grep -q "A farmer instance is active!" && echo "Нода фермера активна" || echo "Нода фермера не активна")
+    pledged_size=$($HOME/subspace-pulsar/pulsar info | grep "You have pledged to the network:" | awk '{print $7}')
+    farmed_blocks=$($HOME/subspace-pulsar/pulsar info | grep "Farmed" | awk '{print $2}')
+    voted_blocks=$($HOME/subspace-pulsar/pulsar info | grep "Voted" | awk '{print $3}')
+    earned_coins=$(echo "scale=1; $($HOME/subspace-pulsar/pulsar info | grep "SSC(s) earned!" | awk '{print $1}') / 1000000000000000000" | bc | sed 's/^\./0./')
+    plotting_status=$($HOME/subspace-pulsar/pulsar info | grep -q "Initial plotting is finished!" && echo "Плоттинг завершен" || echo "Плоттинг не завершен")
+
     # Выводим значения в красивом формате
     echo "======================================="
     echo "   Название узла: $node_name"
-    echo "   Размер плота: $farm_size"
-    echo "   Адрес для наград: $reward_address"
+    echo "   Размер плота: ${pledged_size}GB"
+    echo "   Нафармлено блоков: $farmed_blocks"
+    echo "   Проголосовано блоков: $voted_blocks"
+    echo "   Заработано монет: $earned_coins"
+    echo "   Статус узла: $farmer_status"
+    echo "   Статус плоттинга: $plotting_status"
+    echo "   Публичный ключ $reward_address"
     echo "======================================="
 }
+
 
 update_farm_size() {
     sudo systemctl stop subspace-pulsar.service
