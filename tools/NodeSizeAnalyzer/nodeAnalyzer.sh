@@ -107,11 +107,11 @@ main() {
 	echo -e "${CYAN}Резюме анализа размера узла:${NC}"
 	echo -e "Из ${#nodes[@]} узлов в списке было обнаружено ${found_nodes}."
 	echo -e "Общий размер всех обнаруженных узлов: ${total_size_nodes}GB, что составляет ${percentage_used_nodes}% от общего пространства диска."
-	
+ 	rounded_percentage_used_nodes=$(printf "%.0f" $percentage_used_nodes)
 	# Добавим некоторые дополнительные выводы в зависимости от результата
-	if [ $percentage_used_nodes -gt 70 ]; then
+	if [ $rounded_percentage_used_nodes -gt 70 ]; then
 	    echo -e "${RED}Внимание!${NC} Ноды занимают более 70% от общего дискового пространства. Рекомендуется рассмотреть возможность очистки или масштабирования дискового пространства."
-	elif [ $percentage_used_nodes -gt 50 ]; then
+	elif [ $rounded_percentage_used_nodes -gt 50 ]; then
 	    echo -e "${YELLOW}Примечание:${NC} Ноды занимают более половины дискового пространства. Стоит следить за их ростом и планировать дополнительные меры."
 	else
 	    echo -e "${GREEN}Все в порядке.${NC} Ноды используют менее половины дискового пространства."
