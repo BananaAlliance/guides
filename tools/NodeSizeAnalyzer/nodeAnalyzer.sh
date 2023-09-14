@@ -104,9 +104,9 @@ main() {
         node_size_analyzer
         # Резюме анализа размера нод
         echo -e "${GREEN}======================================="
-	echo -e "${CYAN}Резюме анализа размера узла:${NC}"
+	echo -e "${CYAN}Резюме анализа размера нод:${NC}"
 	echo -e "Из ${#nodes[@]} нод в списке было обнаружено ${found_nodes}."
-	echo -e "Общий размер всех обнаруженных узлов: ${total_size_nodes}GB, что составляет ${percentage_used_nodes}% от общего пространства диска."
+	echo -e "Общий размер всех обнаруженных нод: ${total_size_nodes}GB, что составляет ${percentage_used_nodes}% от общего пространства диска."
  	echo -e "${GREEN}=======================================${NC}"
 
   	rounded_percentage_used_nodes=$(printf "%.0f" $percentage_used_nodes)
