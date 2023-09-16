@@ -160,12 +160,14 @@ main() {
 
     echo ""
     echo -e "${GREEN}Все бэкапы сохранены в: $backup_dir${NC}"
-
     echo ""
-    
-    echo -e "${CYAN}=== Процесс бэкапа завершен ===${NC}"
 
     combine_archives
+
+    echo ""
+
+    echo -e "${CYAN}=== Процесс бэкапа завершен ===${NC}"
+
 }
 
 if [[ "$1" == "backup" ]]; then
