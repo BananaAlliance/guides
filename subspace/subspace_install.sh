@@ -242,9 +242,6 @@ update_node() {
     download_file
     chmod +x $PULSAR
     check_success
-    echo_and_log "Очистка данных фармера..." $YELLOW
-    echo -e "y\nn\nn\nn" | $PULSAR wipe
-    check_success
     echo_and_log "Перезапуск сервиса..." $YELLOW
     sudo systemctl restart subspace-pulsar
     check_success
