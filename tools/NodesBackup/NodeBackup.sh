@@ -32,10 +32,11 @@ errors_occurred=0
 start_time=$(date +%s)
 
 usage() {
-    echo "Использование: $0 [-d backup_dir] [-l] [-h]"
-    echo "    -d    Указать директорию для бэкапов."
-    echo "    -l    Показать список доступных нод."
-    echo "    -h    Показать эту справку."
+    echo "Использование: $0 [backup|-d backup_dir|-l|-h]"
+    echo "    backup    Запустить процесс бэкапа."
+    echo "    -d        Указать директорию для бэкапов."
+    echo "    -l        Показать список доступных нод."
+    echo "    -h        Показать эту справку."
     exit 1
 }
 
@@ -167,4 +168,8 @@ main() {
     combine_archives
 }
 
-main
+if [[ "$1" == "backup" ]]; then
+    main
+else
+    usage
+fi
