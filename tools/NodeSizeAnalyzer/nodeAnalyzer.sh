@@ -46,6 +46,8 @@ node_size_analyzer() {
 
 	total_size_nodes=0
 
+ 	found_nodes=0
+
 	# Перебор всех нод в ассоциативном массиве
 	for node in "${!nodes[@]}"; do
 	    total_size_for_node=0
@@ -56,6 +58,7 @@ node_size_analyzer() {
 	        if [ -d "$dir" ]; then
 	            size=$(du -sBG "$dir" | awk '{print $1}' | tr -d 'G ')
 	            total_size_for_node=$(($total_size_for_node + $size))
+	     	    found_nodes=$(($found_nodes + 1))
 	        else
 	            not_found=1
 	        fi
@@ -88,15 +91,50 @@ find_large_files() {
 
 # Основная логика
 main() {
+    # Заголовок отчета
+    echo -e "${CYAN}Отчет по диагностике системы${NC}"
+    echo -e "${GREEN}Дата и время:$(date)${NC}"
+    echo -e "${GREEN}=======================================${NC}"
+
+    sleep 1
+
     ensure_bc_installed
 
     if [[ "$1" == "analyze" ]]; then
         node_size_analyzer
+        # Резюме анализа размера нод
+        echo -e "${GREEN}======================================="
+	echo -e "${CYAN}Резюме анализа размера нод:${NC}"
+	echo -e "Из ${#nodes[@]} нод в списке было обнаружено ${found_nodes}."
+	echo -e "Общий размер всех обнаруженных нод: ${total_size_nodes}GB, что составляет ${percentage_used_nodes}% от общего пространства диска."
+ 	echo -e "${GREEN}=======================================${NC}"
+
+  	rounded_percentage_used_nodes=$(printf "%.0f" $percentage_used_nodes)
+	# Добавим некоторые дополнительные выводы в зависимости от результата
+	if [ $rounded_percentage_used_nodes -gt 70 ]; then
+	    echo -e "${RED}Внимание!${NC} Ноды занимают более 70% от общего дискового пространства. Рекомендуется рассмотреть возможность очистки или масштабирования дискового пространства."
+	elif [ $rounded_percentage_used_nodes -gt 50 ]; then
+	    echo -e "${YELLOW}Примечание:${NC} Ноды занимают более половины дискового пространства. Стоит следить за их ростом и планировать дополнительные меры."
+	else
+	    echo -e "${GREEN}Все в порядке.${NC} Ноды используют менее половины дискового пространства."
+	fi
+	echo -e "${GREEN}=======================================${NC}"
+     	sleep 1
+
     elif [[ "$1" == "large_files" ]]; then
         find_large_files
+        # Резюме поиска крупных файлов
+        large_files_count=$(find / -type f -size +100M 2>/dev/null | wc -l)
+        echo -e "${GREEN}======================================="
+        echo -e "${CYAN}Резюме поиска крупных файлов:${NC}"
+        echo -e "Обнаружено ${large_files_count} файлов размером больше 100MB."
+        echo -e "${GREEN}=======================================${NC}"
+	sleep 1
+
     else
         echo -e "${RED}Укажите действие: 'analyze' для анализа нод или 'large_files' для поиска крупных файлов.${NC}"
     fi
 }
+
 
 main "$@"
