@@ -100,12 +100,15 @@ backup_node() {
     # Проверка существования всех путей
     for path in "${ADDR[@]}"; do
         if [[ ! -e $path ]]; then
-            echo -e "${RED}Путь $path не найден. Пропуск.${NC}"
+            echo -e "${RED}$node_name нода не найдена. Пропуск.${NC}"
             errors_occurred=$((errors_occurred + 1))
             return
         fi
     done
 
+    echo -e "${GREEN}$node_name найдена${NC}"
+    echo ""
+    sleep 0.5
     local archive_name="${backup_dir}${node_name}_backup_${current_date}.tar.gz"
     echo -e "${YELLOW}Создание бэкапа для ноды $node_name...${NC}"
     sleep 2
