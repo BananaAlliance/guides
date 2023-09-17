@@ -143,6 +143,12 @@ combine_archives() {
 
 
 main() {
+    echo "-----------------------------------------------------------------------------"
+    curl -s https://raw.githubusercontent.com/BananaAlliance/tools/main/logo.sh | bash
+    echo "-----------------------------------------------------------------------------"
+
+    echo ""
+
     echo -e "${CYAN}=== Инициализация процесса бэкапа ===${NC}"
     sleep 1.5
 
