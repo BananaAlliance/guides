@@ -326,6 +326,8 @@ install_node() {
     check_service_status
 }
 
+
+
 # Определение действия: установка или удаление
 case $1 in
     change_plot)
@@ -348,6 +350,16 @@ case $1 in
         ;;
     update)
         update_node
+
+        echo "После обновления..." # Добавим это отладочное сообщение
+        
+        if [[ $2 == "-w" ]]; then
+            if [[ -z $3 ]]; then
+                echo "Аргумент -w требует значение (all, farmer или node)."
+                exit 1
+            fi
+            wipe_choice $3
+        fi
         ;;
     *)
         echo_and_log "Неверный аргумент. Используйте 'install' для установки или 'uninstall' для удаления, 'update' для обновления, 'check_sync' для проверки статуса синхронизации" $RED
