@@ -20,6 +20,14 @@ KEY_FILE="./query-gateway/keys/${SQUID_TYPE}Proc.key"  # Убрано ^
 
 # Функция для проверки и установки Subsquid CLI
 check_and_install_subsquid_cli() {
+    if ! command -v node &> /dev/null; then
+        echo "Node.js не установлен. Скачивание и установка Node.js..."
+        curl -O https://github.com/BananaAlliance/guides/raw/main/subsquid/install_nodejs.sh
+        chmod +x install_nodejs.sh
+        ./install_nodejs.sh
+        rm install_nodejs.sh  # Удаление скрипта установки после использования
+    fi
+
     if ! command -v sqd &> /dev/null; then
         echo "Установка Subsquid CLI..."
         npm install --global @subsquid/cli@latest
@@ -30,6 +38,7 @@ check_and_install_subsquid_cli() {
         echo "Subsquid CLI уже установлен."
     fi
 }
+
 
 # Функция для проверки наличия файла ключа
 check_key_file() {
