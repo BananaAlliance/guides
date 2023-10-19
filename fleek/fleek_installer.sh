@@ -215,8 +215,6 @@ echo
 
   echo
 
-  # Check if system has recommended resources (disk space and memory)
-  checkSystemHasRecommendedResources "$os"
 
 
   # 🚑 Check if ports available
