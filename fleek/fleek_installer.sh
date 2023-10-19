@@ -124,45 +124,6 @@ identifyDistro() {
   uname
 }
 
-isOSSupported() {
-  os=$(identifyOS)
-
-  if [[ "$os" == "linux" ]]; then
-    distro=$(identifyDistro)
-
-    if [[ "$distro" == "ubuntu" ]]; then
-      currVersion=$(lsb_release -r -s | tr -d '.')
-
-      if [[ "$currVersion" -lt "2204" ]]; then
-        echo
-        echo "👹 Oops! You'll need Ubuntu 22.04 at least"
-        echo
-
-        exit 1
-      fi
-    elif [[ "$distro" == "debian" ]]; then
-      currVersion=$(lsb_release -r -s | tr -d '.')
-
-      if [[ "$currVersion" -lt "11" ]]; then
-        echo
-        echo "👹 Oops! You'll need Debian 11 at least"
-        echo
-
-        exit 1
-      fi
-    else
-      printf "👹 Oops! Your operating system (%) distro (%s) is not supported by the installer at this time. Check our guides to learn how to install on your own https://docs.fleek.network\n" "$os" "$distro"
-
-      exit 1    
-    fi
-
-    echo "✅ Operating system ($os), distro ($distro) is supported!"
-  else
-    printf "👹 Oops! Your operating system (%) is not supported by the installer at this time. Check our guides to learn how to install on your own https://docs.fleek.network\n" "$os"
-
-    exit 1
-  fi
-}
 
 hasCommand() {
   command -v "$1" >/dev/null 2>&1
