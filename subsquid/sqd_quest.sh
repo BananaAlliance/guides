@@ -96,6 +96,9 @@ run_snapshot_squid() {
         echo "Папка $SQUID_NAME уже существует. Удалить и продолжить? (y/n)"
         read -r answer
         if [[ $answer == "y" ]]; then
+            cd $HOME/my-snapshot-squid
+            sqd down
+            cd ..
             rm -rf "$SQUID_NAME"
         else
             echo "Операция отменена пользователем."
