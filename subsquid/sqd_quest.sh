@@ -1,13 +1,14 @@
 #!/bin/bash
 
-# Проверка аргумента
-if [[ -z $1 ]]; then
-    echo "Ошибка: Не указан тип squid. Используйте single, double, triple, quad или snapshot."
+# Проверка аргументов
+if [[ -z $1 || -z $2 ]]; then
+    echo "Ошибка: Не указаны необходимые аргументы. Используйте single, double, triple, quad или snapshot для первого аргумента и init или stop для второго."
     exit 1
 fi
 
-# Получение типа squid из аргумента
+# Получение типа squid и действия из аргументов
 SQUID_TYPE=$1
+ACTION=$2
 
 
 # Имя папки squid и URL репозитория
@@ -20,6 +21,7 @@ else
     REPO_URL="https://github.com/subsquid-quests/${SQUID_TYPE}-chain-squid"
     KEY_FILE="./query-gateway/keys/${SQUID_TYPE}Proc.key"  # Обновлено для обработки snapshot
 fi
+
 
 # Путь к файлу ключа
 if [[ $SQUID_TYPE == "snapshot" ]]; then
@@ -123,15 +125,36 @@ run_snapshot_squid() {
     stop_and_remove_containers
 }
 
+# Функция для остановки squid
+stop_squid() {
+    echo "Остановка squid..."
+    if [[ -d "/root/${SQUID_NAME}" ]]; then  # проверка существования папки
+        cd "/root/${SQUID_NAME}" || exit 1
+        sqd down
+        cd "$HOME" || exit 1
+    else
+        echo "Ошибка: папка /root/${SQUID_NAME} не существует. Не удается остановить squid."
+        exit 1
+    fi
+}
+
 ## Вызов функций в зависимости от типа squid
 check_and_install_subsquid_cli
-if [[ $SQUID_TYPE == "snapshot" ]]; then
-    run_snapshot_squid
+
+if [[ $ACTION == "init" ]]; then
+    if [[ $SQUID_TYPE == "snapshot" ]]; then
+        run_snapshot_squid
+    else
+        init_and_cd_squid
+        check_key_file "$KEY_FILE"
+        run_docker_containers
+        prepare_and_run_squid
+        read -rp "После завершения синхронизации нажмите Enter, чтобы остановить и удалить вспомогательные контейнеров..."
+        stop_and_remove_containers
+    fi
+elif [[ $ACTION == "stop" ]]; then
+    stop_squid
 else
-    init_and_cd_squid
-    check_key_file "$KEY_FILE"
-    run_docker_containers
-    prepare_and_run_squid
-    read -rp "После завершения синхронизации нажмите Enter, чтобы остановить и удалить вспомогательные контейнеров..."
-    stop_and_remove_containers
+    echo "Ошибка: Неверное действие. Используйте init или stop."
+    exit 1
 fi
