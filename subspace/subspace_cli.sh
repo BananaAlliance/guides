@@ -51,7 +51,7 @@ check_status() {
     echo -e '\n\e[42mПроверка статуса ноды\e[0m\n' && sleep 1
     if [[ `service subspaced status | grep active` =~ "running" ]]; then
         echo -e "Узел Subspace \e[32mустановлен и работает\e[39m!"
-        echo -e "Для проверки статуса ноды используйте команду \e[7mssystemctl status subspaced \e[0m"
+        echo -e "Для проверки статуса ноды используйте команду \e[7msystemctl status subspaced \e[0m"
         echo -e "Нажмите \e[7mQ\e[0m для выхода из меню статуса"
     else
         echo -e "Узел Subspace \e[31mне установлен корректно\e[39m, пожалуйста, переустановите."
