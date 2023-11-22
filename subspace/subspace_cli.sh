@@ -1,8 +1,21 @@
 #!/bin/bash
 
+DIR="$HOME/subspace-pulsar"
+CONFIG_URL="https://github.com/BananaAlliance/guides/raw/main/subspace/config.sh"
+
+
 # Функция для проверки наличия команды
 command_exists() {
     command -v "$1" >/dev/null 2>&1
+}
+
+create_folders() {
+    echo "Создание необходимых папок..."
+    mkdir -p $DIR
+    # Скачивание файла конфигурации
+    wget -q -O $DIR/config.sh $CONFIG_URL
+    source $DIR/config.sh
+
 }
 
 # Функция для анимации загрузки
@@ -57,6 +70,7 @@ check_status() {
 # Основной блок скрипта
 case "$1" in
     install)
+        create_folders
         install_dependencies
         bash_profile=$HOME/.bash_profile
         if [ -f "$bash_profile" ]; then
@@ -97,8 +111,8 @@ case "$1" in
         sudo apt update && sudo apt install ocl-icd-opencl-dev libopencl-clang-dev libgomp1 -y
         cd $HOME
         rm -rf subspace-node subspace-farmer
-        wget -O subspace-node https://github.com/subspace/subspace/releases/download/gemini-3g-2023-nov-20/subspace-node-ubuntu-x86_64-skylake-gemini-3g-2023-nov-20
-        wget -O subspace-farmer https://github.com/subspace/subspace/releases/download/gemini-3g-2023-nov-20/subspace-farmer-ubuntu-x86_64-skylake-gemini-3g-2023-nov-20
+        wget -O subspace-node $SUBSPACE_NODE
+        wget -O subspace-farmer $SUBSPACE_FARMER
         sudo chmod +x subspace-node subspace-farmer
         sudo mv subspace-node /usr/local/bin/
         sudo mv subspace-farmer /usr/local/bin/
