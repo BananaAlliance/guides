@@ -189,13 +189,13 @@ WantedBy=multi-user.target" > $HOME/subspaced-farmer.service
     uninstall)
         uninstall_node
         ;;
-    сhange_plot)
+    change_plot)
         update_plot_size
         ;;
     check)
         check_status
         ;;
     *)
-        echo "Использование: $0 {install|uninstall|check|сhange_plot}"
+        echo "Использование: $0 {install|uninstall|check|change_plot}"
         ;;
 esac
