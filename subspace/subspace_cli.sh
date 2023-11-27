@@ -3,6 +3,29 @@
 DIR="$HOME/subspace-pulsar"
 CONFIG_URL="https://github.com/BananaAlliance/guides/raw/main/subspace/config.sh"
 
+update_plot_size() {
+    local service_file="/etc/systemd/system/subspaced-farmer.service"
+
+    # Запрос размера фермы у пользователя
+    read -p "Укажите новый размер фермы (нажмите Enter, чтобы указать по умолчанию '2GB'): " PLOT_SIZE
+    PLOT_SIZE=${PLOT_SIZE:-2GB}
+    echo -e "\e[32mНовый размер вашей фермы: $PLOT_SIZE\e[39m"
+
+    # Проверка наличия файла сервиса
+    if [[ ! -f "$service_file" ]]; then
+        echo "Файл $service_file не найден."
+        return 1
+    fi
+
+    # Замена строки с размером фермы
+    sudo sed -i "s/size=\".*\"/size=\"$PLOT_SIZE\"/" "$service_file"
+
+    # Перезагрузка и перезапуск сервиса
+    sudo systemctl daemon-reload
+    sudo systemctl restart subspaced-farmer
+
+    echo "Все готово. Размер фермы обновлен."
+}
 
 # Функция для проверки наличия команды
 command_exists() {
@@ -166,10 +189,13 @@ WantedBy=multi-user.target" > $HOME/subspaced-farmer.service
     uninstall)
         uninstall_node
         ;;
+    сhange_plot)
+        update_plot_size
+        ;;
     check)
         check_status
         ;;
     *)
-        echo "Использование: $0 {install|uninstall|check}"
+        echo "Использование: $0 {install|uninstall|check|сhange_plot}"
         ;;
 esac
