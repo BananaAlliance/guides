@@ -68,6 +68,54 @@ uninstall_node() {
             sudo rm -f /usr/local/bin/subspace-node /usr/local/bin/subspace-farmer  
 }
 
+# Функция обновления ноды и фермера
+update_node_and_farmer() {
+    echo -e "\e[34mНачало процесса обновления...\e[0m"
+    sleep 2
+
+    echo "Скачивание файла конфигурации..."
+    animate_loading &
+    local pid=$! # Сохранение PID анимации
+    wget -q -O $DIR/config.sh $CONFIG_URL
+    source $DIR/config.sh
+    kill $pid
+    sleep 2
+
+    echo "Остановка сервисов..."
+    animate_loading &
+    pid=$!
+    sudo systemctl stop subspaced subspaced-farmer
+    kill $pid
+    sleep 2
+
+    echo "# Удаление старых исполняемых файлов..."
+    animate_loading &
+    pid=$!
+    sudo rm -f /usr/local/bin/subspace-node /usr/local/bin/subspace-farmer
+    kill $pid
+    sleep 2
+
+    echo "Скачивание и установка новых версий..."
+    animate_loading &
+    pid=$!
+    wget -O $DIR/subspace-node $SUBSPACE_NODE
+    wget -O $DIR/subspace-farmer $SUBSPACE_FARMER
+    sudo chmod +x $DIR/subspace-node $DIR/subspace-farmer
+    sudo mv $DIR/subspace-node /usr/local/bin/
+    sudo mv $DIR/subspace-farmer /usr/local/bin/
+    kill $pid
+    sleep 2
+
+    echo "Перезапуск сервисов..."
+    animate_loading &
+    pid=$!
+    sudo systemctl daemon-reload
+    sudo systemctl restart subspaced subspaced-farmer
+    kill $pid
+    tput cnorm # Восстановить курсор
+
+    echo -e "\e[32mОбновление завершено!\e[0m"
+}
 
 check_status() {
     echo "==================================================="
@@ -192,6 +240,9 @@ WantedBy=multi-user.target" > $HOME/subspaced-farmer.service
     change_plot)
         update_plot_size
         ;;
+    update)
+        update_node_and_farmer
+        ;;    
     check)
         check_status
         ;;
