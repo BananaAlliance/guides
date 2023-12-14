@@ -16,6 +16,10 @@ if [[ $SQUID_TYPE == "snapshot" ]]; then
     SQUID_NAME="my-snapshot-squid"
     REPO_URL="https://github.com/subsquid-quests/snapshot-squid"
     KEY_FILE="./query-gateway/keys/snapshot.key"  # Исправлено для snapshot
+elif [[ $SQUID_TYPE == "cryptopunks" ]]; then
+    SQUID_NAME="my-cryptopunks-squid"
+    REPO_URL="https://github.com/subsquid-quests/cryptopunks-squid"
+    KEY_FILE="./query-gateway/keys/cryptopunks.key"
 else
     SQUID_NAME="my-${SQUID_TYPE}-proc-squid"
     REPO_URL="https://github.com/subsquid-quests/${SQUID_TYPE}-chain-squid"
@@ -24,10 +28,10 @@ fi
 
 
 # Путь к файлу ключа
-if [[ $SQUID_TYPE == "snapshot" ]]; then
-    KEY_FILE_NAME="snapshot.key"  # Для snapshot типа
+if [[ $SQUID_TYPE == "snapshot" || $SQUID_TYPE == "cryptopunks" ]]; then
+    KEY_FILE_NAME="${SQUID_TYPE}.key"
 else
-    KEY_FILE_NAME="${SQUID_TYPE}Proc.key"  # Для всех остальных типов
+    KEY_FILE_NAME="${SQUID_TYPE}Proc.key"
 fi
 KEY_FILE="./query-gateway/keys/$KEY_FILE_NAME"
 
@@ -142,8 +146,13 @@ stop_squid() {
 check_and_install_subsquid_cli
 
 if [[ $ACTION == "init" ]]; then
-    if [[ $SQUID_TYPE == "snapshot" ]]; then
-        run_snapshot_squid
+    if [[ $SQUID_TYPE == "snapshot" || $SQUID_TYPE == "cryptopunks" ]]; then
+        init_and_cd_squid
+        check_key_file "$KEY_FILE"
+        run_docker_containers
+        prepare_and_run_squid
+        read -rp "После завершения синхронизации нажмите Enter, чтобы остановить и удалить вспомогательные контейнеров..."
+        stop_and_remove_containers
     else
         init_and_cd_squid
         check_key_file "$KEY_FILE"
