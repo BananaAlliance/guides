@@ -20,6 +20,10 @@ elif [[ $SQUID_TYPE == "cryptopunks" ]]; then
     SQUID_NAME="my-cryptopunks-squid"
     REPO_URL="https://github.com/subsquid-quests/cryptopunks-squid"
     KEY_FILE="./query-gateway/keys/cryptopunks.key"
+elif [[ $SQUID_TYPE == "ens" ]]; then
+    SQUID_NAME="my-ens-squid"
+    REPO_URL="https://github.com/subsquid-quests/ens-squid"
+    KEY_FILE="./query-gateway/keys/ens.key"
 else
     SQUID_NAME="my-${SQUID_TYPE}-proc-squid"
     REPO_URL="https://github.com/subsquid-quests/${SQUID_TYPE}-chain-squid"
@@ -145,24 +149,56 @@ stop_squid() {
 ## Вызов функций в зависимости от типа squid
 check_and_install_subsquid_cli
 
+# Функция для клонирования и установки зависимостей subgraph
+clone_and_setup_subgraph() {
+    git clone https://github.com/subsquid-quests/simple-busd-subgraph
+    cd simple-busd-subgraph || exit 1
+    yarn install
+}
+
+# Функция для запуска Docker контейнеров subgraph
+start_subgraph_containers() {
+    docker compose up -d
+    sleep 120  # Ожидание 2 минуты
+}
+
+# Функция для рандомизации и деплоя subgraph
+deploy_subgraph() {
+    yarn run randomize
+    yarn run create-local
+    yarn run deploy-local
+}
+
+# Функция для остановки Docker контейнеров subgraph
+stop_subgraph_containers() {
+    docker compose down
+}
+
+# Обновление основного блока выбора действий
+
 if [[ $ACTION == "init" ]]; then
-    if [[ $SQUID_TYPE == "snapshot" || $SQUID_TYPE == "cryptopunks" ]]; then
+    if [[ $SQUID_TYPE == "snapshot" || $SQUID_TYPE == "cryptopunks" || $SQUID_TYPE == "ens" ]]; then
         init_and_cd_squid
         check_key_file "$KEY_FILE"
         run_docker_containers
         prepare_and_run_squid
         read -rp "После завершения синхронизации нажмите Enter, чтобы остановить и удалить вспомогательные контейнеров..."
         stop_and_remove_containers
+    elif [[ $SQUID_TYPE == "subgraph" ]]; then
+        clone_and_setup_subgraph
+        check_key_file "./query-gateway/keys/busdSubgraph.key"
+        start_subgraph_containers
+        deploy_subgraph
     else
-        init_and_cd_squid
-        check_key_file "$KEY_FILE"
-        run_docker_containers
-        prepare_and_run_squid
-        read -rp "После завершения синхронизации нажмите Enter, чтобы остановить и удалить вспомогательные контейнеров..."
-        stop_and_remove_containers
+        echo "Ошибка: Неверный тип squid."
+        exit 1
     fi
 elif [[ $ACTION == "stop" ]]; then
-    stop_squid
+    if [[ $SQUID_TYPE == "subgraph" ]]; then
+        stop_subgraph_containers
+    else
+        stop_squid
+    fi
 else
     echo "Ошибка: Неверное действие. Используйте init или stop."
     exit 1
