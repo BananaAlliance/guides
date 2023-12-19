@@ -44,20 +44,52 @@ install_golang() {
 # Установка Babylon
 install_babylon() {
     log "Установка Babylon..."
-    sudo apt install git build-essential curl jq --yes
+    sudo apt install -y git build-essential curl jq
+    check_success "Установка зависимостей не удалась."
+    
     git clone https://github.com/babylonchain/babylon.git
     check_success "Клонирование репозитория Babylon не удалось."
+    
     cd babylon
     git checkout 0.72
-    make install
+    make build
     check_success "Сборка Babylon не удалась."
-    cd ..
+    
+    # Перемещение собранного бинарного файла в директорию, доступную в PATH
+    sudo cp ./build/babylond /usr/local/bin/
+    check_success "Перемещение бинарного файла babylond не удалось."
+
+    cd $HOME
+}
+
+# Изменение файлов конфигурации
+update_config_files() {
+    # Изменение client.toml
+    CLIENT_TOML=~/.babylond/config/client.toml
+    if grep -q 'keyring-backend' $CLIENT_TOML; then
+        sed -i 's/keyring-backend = .*/keyring-backend = "test"/' $CLIENT_TOML
+    else
+        echo 'keyring-backend = "test"' >> $CLIENT_TOML
+    fi
+
+    # Изменение app.toml
+    APP_TOML=~/.babylond/config/app.toml
+    if grep -q 'key-name' $APP_TOML; then
+        sed -i 's/key-name = .*/key-name = "my-key"/' $APP_TOML
+    else
+        echo 'key-name = "my-key"' >> $APP_TOML
+    fi
+
+    # Изменение timeout_commit
+    sed -i 's/timeout_commit = ".*"/timeout_commit = "10s"/' ~/.babylond/config/config.toml
 }
 
 # Инициализация директории ноды
 initialize_node() {
     log "Инициализация директории ноды..."
     read -p "Введите название ноды: " NODENAME
+    echo "export NODENAME=$NODENAME" >> ~/.bashrc
+    source ~/.bashrc
     babylond init $NODENAME --chain-id bbn-test-2
     check_success "Инициализация ноды не удалась."
     wget https://github.com/babylonchain/networks/raw/main/bbn-test-2/genesis.tar.bz2
@@ -134,6 +166,7 @@ main() {
     install_babylon
     initialize_node
     configure_node
+    update_config_files
     install_cosmovisor
     log "Автоматическая часть установки завершена. Пожалуйста, продолжите ручную настройку."
 }
