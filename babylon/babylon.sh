@@ -15,6 +15,16 @@ check_success() {
     fi
 }
 
+
+# Обновление списка пакетов и установка необходимых инструментов
+prepare_system() {
+    log "Подготовка системы..."
+    sudo apt update
+    check_success "Обновление списка пакетов не удалось."
+    sudo apt install -y wget git
+    check_success "Установка wget и git не удалась."
+}
+
 # Установка Golang
 install_golang() {
     log "Установка Golang..."
