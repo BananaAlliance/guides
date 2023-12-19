@@ -56,7 +56,7 @@ install_babylon() {
     check_success "Сборка Babylon не удалась."
     
     # Перемещение собранного бинарного файла в директорию, доступную в PATH
-    sudo cp ./build/babylond /usr/local/bin/
+    sudo cp $HOME/babylon/build/babylond /usr/local/bin/babylond
     check_success "Перемещение бинарного файла babylond не удалось."
 
     cd $HOME
