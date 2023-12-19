@@ -129,6 +129,7 @@ EOF
 
 # Главная функция
 main() {
+    prepare_system
     install_golang
     install_babylon
     initialize_node
