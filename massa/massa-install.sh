@@ -124,7 +124,7 @@ show_private_key() {
 
     if [ -f "$private_key_file" ]; then
         private_key=$(cat "$private_key_file")
-        echo "Ваш приватный ключ: $private_key"
+        echo "Ваш приватный ключ: 0x$private_key"
         echo ""
         echo "Внимание: Этот ключ необходимо импортировать в кошелек MetaMask."
         echo "Для этого откройте MetaMask, перейдите в раздел 'Импортировать аккаунт' и вставьте приватный ключ."
