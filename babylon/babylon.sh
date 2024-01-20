@@ -7,168 +7,190 @@ log() {
     echo "$1" | tee -a $LOGFILE
 }
 
-# Проверка успешности выполнения команды
-check_success() {
-    if [ $? -ne 0 ]; then
-        log "Ошибка: $1"
-        exit 1
-    fi
+# Определение цветных кодов для вывода
+setup_colors() {
+  GREEN="\e[32m"
+  RED="\e[31m"
+  YELLOW="\e[33m"
+  NORMAL="\e[0m"
 }
 
-
-# Обновление списка пакетов и установка необходимых инструментов
-prepare_system() {
-    log "Подготовка системы..."
-    sudo apt update
-    check_success "Обновление списка пакетов не удалось."
-    sudo apt install -y wget git
-    check_success "Установка wget и git не удалась."
+# Вывод цветных сообщений
+echo_colored() {
+  echo -e "${!1}${2}${NORMAL}"
 }
 
-# Установка Golang
-install_golang() {
-    log "Установка Golang..."
-    if [ ! -f go1.21.5.linux-amd64.tar.gz ]; then
-        wget https://go.dev/dl/go1.21.5.linux-amd64.tar.gz
-        check_success "Скачивание Golang не удалось."
-    fi
-    sudo rm -rf /usr/local/go
-    sudo tar -C /usr/local -xzf go1.21.5.linux-amd64.tar.gz
-    echo "export PATH=\$PATH:/usr/local/go/bin" >> ~/.bashrc
-    source ~/.bashrc
-    go version &> /dev/null
-    check_success "Установка Golang не удалась."
-    log "Версия Golang: $(go version)"
+# Получение и отображение логотипа
+logo() {
+  if ! curl -s https://raw.githubusercontent.com/BananaAlliance/tools/main/logo.sh | bash; then
+    log "Ошибка: Не удалось получить логотип."
+    exit 1
+  fi
+  log "Логотип успешно загружен."
 }
 
-# Установка Babylon
-install_babylon() {
-    log "Установка Babylon..."
-    sudo apt install -y git build-essential curl jq
-    check_success "Установка зависимостей не удалась."
-    
-    git clone https://github.com/babylonchain/babylon.git
-    check_success "Клонирование репозитория Babylon не удалось."
-    
-    cd babylon
-    git checkout 0.72
-    make build
-    check_success "Сборка Babylon не удалась."
-    
-    # Перемещение собранного бинарного файла в директорию, доступную в PATH
-    sudo cp $HOME/babylon/build/babylond /usr/local/bin/babylond
-    check_success "Перемещение бинарного файла babylond не удалось."
-
-    cd $HOME
+# Получение и установка имени ноды
+get_nodename() {
+  sed -i '/alias client/d' $HOME/.profile
+  echo_colored "YELLOW" "Введите имя ноды (придумайте):"
+  read BABYLON_MONIKER
+  echo 'export BABYLON_MONIKER='$BABYLON_MONIKER >> $HOME/.profile
+  log "Имя ноды установлено: $BABYLON_MONIKER"
 }
 
-# Изменение файлов конфигурации
-update_config_files() {
-    # Изменение client.toml
-    CLIENT_TOML=~/.babylond/config/client.toml
-    if grep -q 'keyring-backend' $CLIENT_TOML; then
-        sed -i 's/keyring-backend = .*/keyring-backend = "test"/' $CLIENT_TOML
-    else
-        echo 'keyring-backend = "test"' >> $CLIENT_TOML
-    fi
-
-    # Изменение app.toml
-    APP_TOML=~/.babylond/config/app.toml
-    if grep -q 'key-name' $APP_TOML; then
-        sed -i 's/key-name = .*/key-name = "my-key"/' $APP_TOML
-    else
-        echo 'key-name = "my-key"' >> $APP_TOML
-    fi
-
-    # Изменение timeout_commit
-    sed -i 's/timeout_commit = ".*"/timeout_commit = "10s"/' ~/.babylond/config/config.toml
+# Установка Go
+install_go() {
+  if ! bash <(curl -s https://raw.githubusercontent.com/DOUBLE-TOP/tools/main/go.sh); then
+    log "Ошибка: Не удалось установить Go."
+    exit 1
+  fi
+  source $HOME/.profile
+  sleep 1
+  log "Go успешно установлен."
 }
 
-# Инициализация директории ноды
-initialize_node() {
-    log "Инициализация директории ноды..."
-    read -p "Введите название ноды: " NODENAME
-    echo "export NODENAME=$NODENAME" >> ~/.bashrc
-    source ~/.bashrc
-    babylond init $NODENAME --chain-id bbn-test-2
-    check_success "Инициализация ноды не удалась."
-    wget https://github.com/babylonchain/networks/raw/main/bbn-test-2/genesis.tar.bz2
-    tar -xjf genesis.tar.bz2 && rm genesis.tar.bz2
-    mv genesis.json ~/.babylond/config/genesis.json
+# Клонирование, проверка и сборка репозитория Babylon
+source_build_git() {
+  cd $HOME
+  rm -rf babylon
+  if ! git clone https://github.com/babylonchain/babylon.git; then
+    log "Ошибка: Не удалось клонировать репозиторий Babylon."
+    exit 1
+  fi
+  cd babylon
+  git checkout v0.7.2
+  make build
+  log "Babylon успешно склонирован и собран."
+  mkdir -p $HOME/.babylond/cosmovisor/genesis/bin
+    mv build/babylond $HOME/.babylond/cosmovisor/genesis/bin/
+    rm -rf build
+
+    sudo ln -s $HOME/.babylond/cosmovisor/genesis $HOME/.babylond/cosmovisor/current -f
+    sudo ln -s $HOME/.babylond/cosmovisor/current/bin/babylond /usr/local/bin/babylond -f
+
+    go install cosmossdk.io/tools/cosmovisor/cmd/cosmovisor@v1.5.0
 }
 
-# Настройка конфигурации
-configure_node() {
-    log "Настройка конфигурации ноды..."
-
-    CONFIG_TOML=~/.babylond/config/config.toml
-    APP_TOML=~/.babylond/config/app.toml
-
-    # Добавление или обновление seeds в config.toml
-    SEEDS="8da45f9ff83b4f8dd45bbcb4f850999637fbfe3b@seed0.testnet.babylonchain.io:26656,4b1f8a774220ba1073a4e9f4881de218b8a49c99@seed1.testnet.babylonchain.io:26656"
-    grep -q '\[p2p\]' $CONFIG_TOML && sed -i "/\[p2p\]/a seeds = \"$SEEDS\"" $CONFIG_TOML || echo -e "[p2p]\nseeds = \"$SEEDS\"" >> $CONFIG_TOML
-
-    # Обновление параметров в app.toml
-    grep -q '\[btc-config\]' $APP_TOML && sed -i '/\[btc-config\]/,/\[.*\]/s/network = .*/network = "mainnet"/' $APP_TOML || echo -e '[btc-config]\nnetwork = "mainnet"' >> $APP_TOML
-    grep -q 'minimum-gas-prices' $APP_TOML && sed -i 's/minimum-gas-prices = .*/minimum-gas-prices = "0.00001ubbn"/' $APP_TOML || echo 'minimum-gas-prices = "0.00001ubbn"' >> $APP_TOML
-}
-
-# Установка Cosmovisor
-install_cosmovisor() {
-    log "Установка Cosmovisor..."
-    go install cosmossdk.io/tools/cosmovisor/cmd/cosmovisor@latest
-    check_success "Установка Cosmovisor не удалась."
-    export PATH=$PATH:$(go env GOPATH)/bin
-    echo 'export PATH=$PATH:$(go env GOPATH)/bin' >> ~/.bashrc
-    source ~/.bashrc
-    mkdir -p ~/.babylond/cosmovisor/genesis/bin
-    mkdir -p ~/.babylond/cosmovisor/upgrades
-    cp $(go env GOPATH)/bin/babylond ~/.babylond/cosmovisor/genesis/bin/babylond
-    setup_cosmovisor_service
-}
-
-# Настройка службы Cosmovisor
-setup_cosmovisor_service() {
-    COSMOVISOR_PATH=$(go env GOPATH)/bin/cosmovisor
-    if [ -f $COSMOVISOR_PATH ]; then
-        sudo tee /etc/systemd/system/babylond.service > /dev/null <<EOF
+# Настройка системной службы для ноды Babylon
+setup_systemd() {
+  sudo tee /etc/systemd/system/babylon.service > /dev/null << EOF
 [Unit]
-Description=Babylon daemon
+Description=babylon node service
 After=network-online.target
 
 [Service]
 User=$USER
-ExecStart=$COSMOVISOR_PATH run start --x-crisis-skip-assert-invariants
-Restart=always
-RestartSec=3
-LimitNOFILE=infinity
-
+ExecStart=$HOME/go/bin/cosmovisor run start
+Restart=on-failure
+RestartSec=10
+LimitNOFILE=65535
+Environment="DAEMON_HOME=$HOME/.babylond"
 Environment="DAEMON_NAME=babylond"
-Environment="DAEMON_HOME=${HOME}/.babylond"
-Environment="DAEMON_RESTART_AFTER_UPGRADE=true"
-Environment="DAEMON_ALLOW_DOWNLOAD_BINARIES=false"
+Environment="UNSAFE_SKIP_BACKUP=true"
+Environment="PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:$HOME/.babylond/cosmovisor/current/bin"
 
 [Install]
 WantedBy=multi-user.target
 EOF
-        sudo systemctl daemon-reload
-        sudo systemctl start babylond
-    else
-        log "Ошибка: Cosmovisor не найден."
-        exit 1
-    fi
+
+sudo systemctl daemon-reload
+sudo systemctl enable babylon.service
+  log "Системная служба Babylon настроена."
 }
 
-# Главная функция
-main() {
-    prepare_system
-    install_golang
-    install_babylon
-    initialize_node
-    configure_node
-    update_config_files
-    install_cosmovisor
-    log "Автоматическая часть установки завершена. Пожалуйста, продолжите ручную настройку."
+# Инициализация блокчейна с указанными конфигурациями
+init_chain() {
+ babylond config chain-id bbn-test-2
+    babylond config keyring-backend test
+    babylond config node tcp://localhost:16457
+
+    babylond init $BABYLON_MONIKER --chain-id bbn-test-2
+
+    curl -Ls https://snapshots.kjnodes.com/babylon-testnet/genesis.json > $HOME/.babylond/config/genesis.json
+    curl -Ls https://snapshots.kjnodes.com/babylon-testnet/addrbook.json > $HOME/.babylond/config/addrbook.json
+
+    sed -i -e "s|^seeds *=.*|seeds = \"3f472746f46493309650e5a033076689996c8881@babylon-testnet.rpc.kjnodes.com:16459\"|" $HOME/.babylond/config/config.toml
+
+    sed -i -e "s|^minimum-gas-prices *=.*|minimum-gas-prices = \"0.00001ubbn\"|" $HOME/.babylond/config/app.toml
+
+    sed -i \
+    -e 's|^pruning *=.*|pruning = "custom"|' \
+    -e 's|^pruning-keep-recent *=.*|pruning-keep-recent = "100"|' \
+    -e 's|^pruning-keep-every *=.*|pruning-keep-every = "0"|' \
+    -e 's|^pruning-interval *=.*|pruning-interval = "19"|' \
+    $HOME/.babylond/config/app.toml
+
+    sed -i -e "s|^timeout_commit *=.*|timeout_commit = \"10s\"|" $HOME/.babylond/config/config.toml
+
+    sed -i -e "s%^proxy_app = \"tcp://127.0.0.1:26658\"%proxy_app = \"tcp://127.0.0.1:16458\"%; s%^laddr = \"tcp://127.0.0.1:26657\"%laddr = \"tcp://127.0.0.1:16457\"%; s%^pprof_laddr = \"localhost:6060\"%pprof_laddr = \"localhost:16460\"%; s%^laddr = \"tcp://0.0.0.0:26656\"%laddr = \"tcp://0.0.0.0:16456\"%; s%^prometheus_listen_addr = \":26660\"%prometheus_listen_addr = \":16466\"%" $HOME/.babylond/config/config.toml
+    sed -i -e "s%^address = \"tcp://localhost:1317\"%address = \"tcp://0.0.0.0:16417\"%; s%^address = \":8080\"%address = \":16480\"%; s%^address = \"localhost:9090\"%address = \"0.0.0.0:16490\"%; s%^address = \"localhost:9091\"%address = \"0.0.0.0:16491\"%; s%:8545%:16445%; s%:8546%:16446%; s%:6065%:16465%" $HOME/.babylond/config/app.toml
+
+  log "Цепочка инициализирована."
 }
 
-main
+# Скачивание и распаковка снапшота
+download_snapshot() {
+  curl -L https://snapshots.kjnodes.com/babylon-testnet/snapshot_latest.tar.lz4 | tar -Ilz4 -xf - -C $HOME/.babylond
+    [[ -f $HOME/.babylond/data/upgrade-info.json ]] && cp $HOME/.babylond/data/upgrade-info.json $HOME/.babylond/cosmovisor/genesis/upgrade-info.json
+  log "Снапшот скачан и распакован."
+}
+
+# Запуск службы Babylon
+start_babylon() {
+  if ! sudo systemctl start babylon; then
+    log "Ошибка: Не удалось запустить службу Babylon."
+    exit 1
+  fi
+  log "Служба Babylon запущена."
+}
+
+# Удаление службы Babylon
+uninstall_babylon() {
+  if ! sudo systemctl stop babylon; then
+    log "Ошибка: Не удалось остановить службу Babylon."
+    exit 1
+  fi
+  if ! sudo systemctl disable babylon; then
+    log "Ошибка: Не удалось отключить службу Babylon."
+    exit 1
+  fi
+  sudo rm /etc/systemd/system/babylon.service
+  sudo rm -rf $HOME/babylon
+ sudo rm -rf $HOME/.babylon
+  sudo systemctl daemon-reload
+  log "Служба Babylon удалена."
+}
+
+# Главная функция для организации установки
+install() {
+  setup_colors
+  logo
+  get_nodename
+  install_go
+  source_build_git
+  setup_systemd
+  init_chain
+  download_snapshot
+  start_babylon
+  log "Установка ноды Babylon успешно завершена."
+}
+
+# Главная функция для деинсталляции
+uninstall() {
+  setup_colors
+  uninstall_babylon
+  log "Деинсталляция ноды Babylon успешно завершена."
+}
+
+# Основное выполнение скрипта
+case "$1" in
+  install)
+    install
+    ;;
+  uninstall)
+    uninstall
+    ;;
+  *)
+    echo "Использование: $0 {install|uninstall}"
+    exit 1
+esac
