@@ -156,7 +156,7 @@ uninstall_babylon() {
   fi
   sudo rm /etc/systemd/system/babylon.service
   sudo rm -rf $HOME/babylon
- sudo rm -rf $HOME/.babylon
+ sudo rm -rf $HOME/.babylond
   sudo systemctl daemon-reload
   log "Служба Babylon удалена."
 }
