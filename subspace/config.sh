@@ -2,3 +2,5 @@ PULSAR_URL="https://github.com/subspace/pulsar/releases/download/v0.6.14-alpha/p
 CURRENT_VERSION="0.6.14"
 SUBSPACE_NODE="https://github.com/subspace/subspace/releases/download/gemini-3g-2024-feb-01/subspace-node-ubuntu-x86_64-skylake-gemini-3g-2024-feb-01"
 SUBSPACE_FARMER="https://github.com/subspace/subspace/releases/download/gemini-3g-2024-feb-01/subspace-farmer-ubuntu-x86_64-skylake-gemini-3g-2024-feb-01"
+SUBSPACE_NODE_3G="https://github.com/subspace/subspace/releases/download/gemini-3h-2024-feb-19/subspace-node-ubuntu-x86_64-skylake-gemini-3h-2024-feb-19"
+SUBSPACE_FARMER_3G="https://github.com/subspace/subspace/releases/download/gemini-3h-2024-feb-19/subspace-farmer-ubuntu-x86_64-skylake-gemini-3h-2024-feb-19"
