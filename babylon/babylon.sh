@@ -225,11 +225,9 @@ start_babylon() {
 uninstall_babylon() {
   if ! sudo systemctl stop babylon; then
     log "Ошибка: Не удалось остановить службу Babylon."
-    exit 1
   fi
   if ! sudo systemctl disable babylon; then
     log "Ошибка: Не удалось отключить службу Babylon."
-    exit 1
   fi
   sudo rm /etc/systemd/system/babylon.service
   sudo rm -rf $HOME/babylon
