@@ -72,9 +72,15 @@ get_nodename() {
   fi
 }
 
-
-# Установка Go
 install_go() {
+    REQUIRED_VERSION="1.21"
+    CURRENT_VERSION=$(go version | grep -oP '\d+\.\d+')
+    
+    if [[ $(echo "$CURRENT_VERSION >= $REQUIRED_VERSION" | bc) -eq 1 ]]; then
+        echo "Текущая установленная версия Go ($CURRENT_VERSION) удовлетворяет требуемой версии ($REQUIRED_VERSION). Процесс установки пропускается."
+        return
+    fi
+
     echo "Обновление списка пакетов..."
     sudo apt-get update
 
@@ -99,8 +105,9 @@ install_go() {
 
     echo "Go успешно установлен. Версия $(go version)."
     source ~/.profile
-    echo "Заметьте, вам нужно будет выполнить 'source ~/.profile' или перезагрузить оболочку, чтобы применить изменения."
+    echo "Обновите текущую сессию или перезагрузите оболочку для применения изменений."
 }
+
 
 # Клонирование, проверка и сборка репозитория Babylon
 source_build_git() {
