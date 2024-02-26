@@ -56,7 +56,6 @@ get_nodename() {
 
 # Установка Go
 install_go() {
-  update_install_go() {
     echo "Обновление списка пакетов..."
     sudo apt-get update
 
