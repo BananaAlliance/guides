@@ -94,7 +94,9 @@ source_build_git() {
     exit 1
   fi
   cd babylon
+  log "Получаем последнюю версию.."
   VERSION=$(get_version_from_github)
+  echo $VERSION
   git checkout $VERSION
   make build
   log "Babylon успешно склонирован и собран."
