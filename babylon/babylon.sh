@@ -37,7 +37,7 @@ get_current_version() {
 
 # Получение версии из файла на GitHub
 get_version_from_github() {
-  VERSION_URL="https://github.com/BananaAlliance/guides/raw/main/babylon/babylon_version.txt"
+  VERSION_URL="https://raw.githubusercontent.com/BananaAlliance/guides/main/babylon/babylon_version.txt"
   if ! VERSION=$(curl -s $VERSION_URL); then
     log "Ошибка: Не удалось получить версию из GitHub."
     exit 1
