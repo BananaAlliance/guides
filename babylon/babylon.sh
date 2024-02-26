@@ -90,6 +90,8 @@ install_go() {
     echo "Распаковка архива Go..."
     sudo tar -xvf go1.21.0.linux-amd64.tar.gz
 
+    sudo rm -rf /usr/local/go
+
     echo "Перемещение Go в /usr/local..."
     sudo mv go /usr/local
 
