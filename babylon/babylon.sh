@@ -51,6 +51,7 @@ install_go() {
 
 # Клонирование, проверка и сборка репозитория Babylon
 source_build_git() {
+  sudo apt install git build-essential curl jq --yes
   cd $HOME
   rm -rf babylon
   if ! git clone https://github.com/babylonchain/babylon.git; then
@@ -100,11 +101,11 @@ sudo systemctl enable babylon.service
 
 # Инициализация блокчейна с указанными конфигурациями
 init_chain() {
- babylond config chain-id bbn-test-2
+ babylond config chain-id bbn-test-3
     babylond config keyring-backend test
     babylond config node tcp://localhost:16457
 
-    babylond init $BABYLON_MONIKER --chain-id bbn-test-2
+    babylond init $BABYLON_MONIKER --chain-id bbn-test-3
 
     curl -Ls https://snapshots.kjnodes.com/babylon-testnet/genesis.json > $HOME/.babylond/config/genesis.json
     curl -Ls https://snapshots.kjnodes.com/babylon-testnet/addrbook.json > $HOME/.babylond/config/addrbook.json
