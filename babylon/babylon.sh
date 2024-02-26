@@ -143,7 +143,9 @@ init_chain() {
 
     babylond init $BABYLON_MONIKER --chain-id bbn-test-3
 
-    curl -Ls https://snapshots.kjnodes.com/babylon-testnet/genesis.json > $HOME/.babylond/config/genesis.json
+    wget https://github.com/babylonchain/networks/raw/main/bbn-test-3/genesis.tar.bz2
+    tar -xjf genesis.tar.bz2 && rm genesis.tar.bz2
+    mv genesis.json ~/.babylond/config/genesis.json
     curl -Ls https://snapshots.kjnodes.com/babylon-testnet/addrbook.json > $HOME/.babylond/config/addrbook.json
 
     sed -i -e "s|^seeds *=.*|seeds = \"3f472746f46493309650e5a033076689996c8881@babylon-testnet.rpc.kjnodes.com:16459\"|" $HOME/.babylond/config/config.toml
