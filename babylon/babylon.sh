@@ -47,12 +47,30 @@ get_version_from_github() {
 
 # Получение и установка имени ноды
 get_nodename() {
-  sed -i '/alias client/d' $HOME/.profile
-  echo_colored "YELLOW" "Введите имя ноды (придумайте):"
-  read BABYLON_MONIKER
-  echo 'export BABYLON_MONIKER='$BABYLON_MONIKER >> $HOME/.profile
-  log "Имя ноды установлено: $BABYLON_MONIKER"
+  # Попытка извлечь существующее имя ноды из .profile
+  EXISTING_MONIKER=$(grep 'export BABYLON_MONIKER=' $HOME/.profile | cut -d'=' -f2)
+  
+  if [ -n "$EXISTING_MONIKER" ]; then
+    echo_colored "YELLOW" "Текущее имя ноды: $EXISTING_MONIKER. Хотите изменить его? (yes/no):"
+    read CHANGE_MONIKER
+    
+    if [ "$CHANGE_MONIKER" = "yes" ]; then
+      echo_colored "YELLOW" "Введите новое имя ноды:"
+      read BABYLON_MONIKER
+      # Замена существующего имени ноды на новое
+      sed -i "s/export BABYLON_MONIKER=$EXISTING_MONIKER/export BABYLON_MONIKER=$BABYLON_MONIKER/" $HOME/.profile
+      log "Имя ноды изменено на: $BABYLON_MONIKER"
+    else
+      log "Имя ноды оставлено без изменений: $EXISTING_MONIKER"
+    fi
+  else
+    echo_colored "YELLOW" "Введите имя ноды:"
+    read BABYLON_MONIKER
+    echo 'export BABYLON_MONIKER='$BABYLON_MONIKER >> $HOME/.profile
+    log "Имя ноды установлено: $BABYLON_MONIKER"
+  fi
 }
+
 
 # Установка Go
 install_go() {
