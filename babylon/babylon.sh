@@ -29,6 +29,22 @@ logo() {
   log "Логотип успешно загружен."
 }
 
+# Получение текущей версии babylond
+get_current_version() {
+  CURRENT_VERSION=$(babylond version)
+  echo $CURRENT_VERSION
+}
+
+# Получение версии из файла на GitHub
+get_version_from_github() {
+  VERSION_URL="https://github.com/BananaAlliance/guides/raw/main/babylon/babylon_version.txt"
+  if ! VERSION=$(curl -s $VERSION_URL); then
+    log "Ошибка: Не удалось получить версию из GitHub."
+    exit 1
+  fi
+  echo $VERSION
+}
+
 # Получение и установка имени ноды
 get_nodename() {
   sed -i '/alias client/d' $HOME/.profile
@@ -59,7 +75,8 @@ source_build_git() {
     exit 1
   fi
   cd babylon
-  git checkout v0.8.3
+  VERSION=$(get_version_from_github)
+  git checkout $VERSION
   make build
   log "Babylon успешно склонирован и собран."
   mkdir -p $HOME/.babylond/cosmovisor/genesis/bin
@@ -70,6 +87,25 @@ source_build_git() {
     sudo ln -s $HOME/.babylond/cosmovisor/current/bin/babylond /usr/local/bin/babylond -f
 
     go install cosmossdk.io/tools/cosmovisor/cmd/cosmovisor@v1.5.0
+}
+
+update() {
+  setup_colors
+  CURRENT_VERSION=$(get_current_version)
+  LATEST_VERSION=$(get_version_from_github)
+
+  log "Текущая версия: $CURRENT_VERSION"
+  log "Последняя версия: $LATEST_VERSION"
+
+  if [ "$CURRENT_VERSION" = "$LATEST_VERSION" ]; then
+    log "Обновление не требуется. У вас уже установлена последняя версия."
+    exit 0
+  else
+    log "Начало обновления ноды Babylon."
+    source_build_git
+    sudo systemctl restart babylon.service
+    log "Нода Babylon обновлена до версии $LATEST_VERSION."
+  fi
 }
 
 # Настройка системной службы для ноды Babylon
@@ -191,7 +227,10 @@ case "$1" in
   uninstall)
     uninstall
     ;;
+  update)
+    update
+    ;;
   *)
-    echo "Использование: $0 {install|uninstall}"
+    echo "Использование: $0 {install|uninstall|update}"
     exit 1
 esac
