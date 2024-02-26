@@ -73,7 +73,7 @@ get_nodename() {
 }
 
 install_go() {
-    REQUIRED_VERSION="1.22"
+    REQUIRED_VERSION="1.21"
     CURRENT_VERSION=$(go version | grep -oP '\d+\.\d+')
     
     if [[ $(echo "$CURRENT_VERSION >= $REQUIRED_VERSION" | bc) -eq 1 ]]; then
@@ -84,11 +84,11 @@ install_go() {
     echo "Обновление списка пакетов..."
     sudo apt-get update
 
-    echo "Скачивание Go версии 1.22.0..."
-    wget https://go.dev/dl/go1.22.0.linux-amd64.tar.gz
+    echo "Скачивание Go версии 1.21.0..."
+    wget https://go.dev/dl/go1.21.0.linux-amd64.tar.gz
 
     echo "Распаковка архива Go..."
-    sudo tar -xvf go1.22.0.linux-amd64.tar.gz
+    sudo tar -xvf go1.21.0.linux-amd64.tar.gz
 
     echo "Перемещение Go в /usr/local..."
     sudo mv go /usr/local
