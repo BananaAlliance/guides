@@ -1,6 +1,7 @@
 #!/bin/bash
 
 LOGFILE="install_log.txt"
+VERSION_URL="https://raw.githubusercontent.com/BananaAlliance/guides/main/babylon/babylon_version.txt"
 
 # Функция для логирования
 log() {
@@ -112,7 +113,9 @@ source_build_git() {
   fi
   cd babylon
   log "Получаем последнюю версию.."
-  VERSION=$(get_version_from_github)
+  if ! VERSION=$(curl -s $VERSION_URL); then
+    log "Ошибка: Не удалось получить версию из GitHub."
+  fi
   echo $VERSION
   git checkout $VERSION
   make build
@@ -129,8 +132,11 @@ source_build_git() {
 
 update() {
   setup_colors
+  if ! LATEST_VERSION=$(curl -s $VERSION_URL); then
+    log "Ошибка: Не удалось получить версию из GitHub."
+  fi
+
   CURRENT_VERSION=$(get_current_version)
-  LATEST_VERSION=$(get_version_from_github)
 
   log "Текущая версия: $CURRENT_VERSION"
   log "Последняя версия: $LATEST_VERSION"
