@@ -59,7 +59,7 @@ source_build_git() {
     exit 1
   fi
   cd babylon
-  git checkout v0.7.2
+  git checkout v0.8.3
   make build
   log "Babylon успешно склонирован и собран."
   mkdir -p $HOME/.babylond/cosmovisor/genesis/bin
