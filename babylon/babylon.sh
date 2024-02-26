@@ -56,13 +56,32 @@ get_nodename() {
 
 # Установка Go
 install_go() {
-  if ! bash <(curl -s https://raw.githubusercontent.com/DOUBLE-TOP/tools/main/go.sh); then
-    log "Ошибка: Не удалось установить Go."
-    exit 1
-  fi
-  source $HOME/.profile
-  sleep 1
-  log "Go успешно установлен."
+  update_install_go() {
+    echo "Обновление списка пакетов..."
+    sudo apt-get update
+
+    echo "Скачивание Go версии 1.21.0..."
+    wget https://go.dev/dl/go1.21.0.linux-amd64.tar.gz
+
+    echo "Распаковка архива Go..."
+    sudo tar -xvf go1.21.0.linux-amd64.tar.gz
+
+    echo "Перемещение Go в /usr/local..."
+    sudo mv go /usr/local
+
+    echo "Настройка переменных окружения для Go..."
+    export GOROOT=/usr/local/go
+    export GOPATH=$HOME/go
+    export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
+
+    echo "Добавление переменных окружения в ~/.profile для будущих сессий..."
+    echo 'export GOROOT=/usr/local/go' >> ~/.profile
+    echo 'export GOPATH=$HOME/go' >> ~/.profile
+    echo 'export PATH=$GOPATH/bin:$GOROOT/bin:$PATH' >> ~/.profile
+
+    echo "Go успешно установлен. Версия $(go version)."
+    source ~/.profile
+    echo "Заметьте, вам нужно будет выполнить 'source ~/.profile' или перезагрузить оболочку, чтобы применить изменения."
 }
 
 # Клонирование, проверка и сборка репозитория Babylon
