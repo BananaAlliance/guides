@@ -9,6 +9,7 @@ NC='\033[0m' # Без цвета
 
 declare -A nodes
 # Список нод и их директорий
+nodes["Babylon"]="/root/.babylond/config/,/root/.babylond/data/priv_validator_state.json,/root/.babylond/key_ring/wallet.info"
 nodes["Fleek"]="$HOME/.lightning/keystore/"
 nodes["Gear"]="$HOME/.local/share/gear/chains/gear_staging_testnet_v7/network/"
 nodes["Massa"]="/root/massa/massa-node/config/node_privkey.key,/root/massa/massa-client/wallets/"
