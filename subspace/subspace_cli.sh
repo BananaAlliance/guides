@@ -219,7 +219,7 @@ After=network.target
 [Service]
 User=$USER
 Type=simple
-ExecStart=/usr/local/bin/subspace-node --base-path \"$SUBSPACE_NODE_PATH\" --chain gemini-3h --blocks-pruning 256 --state-pruning archive-canonical --no-private-ipv4 --validator --name $SUBSPACE_NODENAME
+ExecStart=/usr/local/bin/subspace-node run --base-path \"$SUBSPACE_NODE_PATH\" --chain gemini-3h --blocks-pruning 256 --state-pruning archive-canonical --no-private-ipv4 --validator --name $SUBSPACE_NODENAME
 Restart=on-failure
 LimitNOFILE=65535
 
