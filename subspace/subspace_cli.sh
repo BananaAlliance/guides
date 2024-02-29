@@ -99,7 +99,7 @@ update_node_and_farmer() {
     animate_loading &
     pid=$!
     wget -O $DIR/subspace-node $SUBSPACE_NODE_3H
-    wget -O $DIR/subspace-farmer $SUBSPACE_FARMER_3h
+    wget -O $DIR/subspace-farmer $SUBSPACE_FARMER_3H
     sudo chmod +x $DIR/subspace-node $DIR/subspace-farmer
     sudo mv $DIR/subspace-node /usr/local/bin/
     sudo mv $DIR/subspace-farmer /usr/local/bin/
