@@ -146,8 +146,8 @@ function updateNetwork {
     echo "Очищаю директорию $HOME/.local/share/subspace-farmer"
     rm -rf $HOME/.local/share/subspace-farmer/*
 
-    echo "Меняю --chain gemini-3g на --chain gemini-3h в /etc/systemd/system/subspaced.service"
-    sudo sed -i 's/--chain gemini-3g/--chain gemini-3h/g' /etc/systemd/system/subspaced.service
+    echo "Изменяю строку ExecStart в /etc/systemd/system/subspaced.service"
+    sudo sed -i -r 's|ExecStart=/usr/local/bin/subspace-node run --base-path "([^"]+)" --chain gemini-3h --blocks-pruning [^ ]+ --state-pruning [^ ]+ --no-private-ipv4 --validator --name ([^ ]+)|ExecStart=/usr/local/bin/subspace-node run --base-path "\1" --chain gemini-3h --farmer --name \2|' /etc/systemd/system/subspaced.service
 
     echo "Выполняю daemon-reload"
     sudo systemctl daemon-reload
