@@ -98,8 +98,8 @@ update_node_and_farmer() {
     echo "Скачивание и установка новых версий..."
     animate_loading &
     pid=$!
-    wget -O $DIR/subspace-node $SUBSPACE_NODE
-    wget -O $DIR/subspace-farmer $SUBSPACE_FARMER
+    wget -O $DIR/subspace-node $SUBSPACE_NODE_3H
+    wget -O $DIR/subspace-farmer $SUBSPACE_FARMER_3h
     sudo chmod +x $DIR/subspace-node $DIR/subspace-farmer
     sudo mv $DIR/subspace-node /usr/local/bin/
     sudo mv $DIR/subspace-farmer /usr/local/bin/
@@ -136,6 +136,27 @@ check_status() {
     else
         echo -e "Фермер Subspace \e[31mне установлен корректно\e[39m, пожалуйста, переустановите."
     fi
+}
+
+function updateNetwork {
+    echo "Останавливаю сервисы: subspaced.service и subspaced-farmer.service"
+    sudo systemctl stop subspaced.service
+    sudo systemctl stop subspaced-farmer.service
+
+    echo "Очищаю директорию $HOME/.local/share/subspace-farmer"
+    rm -rf $HOME/.local/share/subspace-farmer/*
+
+    echo "Меняю --chain gemini-3g на --chain gemini-3h в /etc/systemd/system/subspaced.service"
+    sudo sed -i 's/--chain gemini-3g/--chain gemini-3h/g' /etc/systemd/system/subspaced.service
+
+    echo "Выполняю daemon-reload"
+    sudo systemctl daemon-reload
+
+    echo "Запускаю остановленные процессы: subspaced.service и subspaced-farmer.service"
+    sudo systemctl start subspaced.service
+    sudo systemctl start subspaced-farmer.service
+
+    echo "Все операции завершены."
 }
 
 # Основной блок скрипта
@@ -182,8 +203,8 @@ case "$1" in
         sudo apt update && sudo apt install ocl-icd-opencl-dev libopencl-clang-dev libgomp1 -y
         cd $HOME
         rm -rf subspace-node subspace-farmer
-        wget -O subspace-node $SUBSPACE_NODE
-        wget -O subspace-farmer $SUBSPACE_FARMER
+        wget -O subspace-node $SUBSPACE_NODE_3H
+        wget -O subspace-farmer $SUBSPACE_FARMER_3H
         sudo chmod +x subspace-node subspace-farmer
         sudo mv subspace-node /usr/local/bin/
         sudo mv subspace-farmer /usr/local/bin/
@@ -198,7 +219,7 @@ After=network.target
 [Service]
 User=$USER
 Type=simple
-ExecStart=/usr/local/bin/subspace-node --base-path \"$SUBSPACE_NODE_PATH\" --chain gemini-3g --blocks-pruning 256 --state-pruning archive-canonical --no-private-ipv4 --validator --name $SUBSPACE_NODENAME
+ExecStart=/usr/local/bin/subspace-node --base-path \"$SUBSPACE_NODE_PATH\" --chain gemini-3h --blocks-pruning 256 --state-pruning archive-canonical --no-private-ipv4 --validator --name $SUBSPACE_NODENAME
 Restart=on-failure
 LimitNOFILE=65535
 
@@ -243,6 +264,9 @@ WantedBy=multi-user.target" > $HOME/subspaced-farmer.service
     update)
         update_node_and_farmer
         ;;    
+    update_network)
+        updateNetwork
+        ;;
     check)
         check_status
         ;;
