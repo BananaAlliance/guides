@@ -146,17 +146,45 @@ function updateNetwork {
     echo "Очищаю директорию $HOME/.local/share/subspace-farmer"
     rm -rf $HOME/.local/share/subspace-farmer/*
 
-    echo "Изменяю строку ExecStart в /etc/systemd/system/subspaced.service"
-    sudo sed -i -r 's|ExecStart=/usr/local/bin/subspace-node run --base-path "([^"]+)" --chain gemini-3h --blocks-pruning [^ ]+ --state-pruning [^ ]+ --no-private-ipv4 --validator --name ([^ ]+)|ExecStart=/usr/local/bin/subspace-node run --base-path "\1" --chain gemini-3h --farmer --name \2|' /etc/systemd/system/subspaced.service
+    # Путь к файлу сервиса
+service_file="/etc/systemd/system/subspaced.service"
 
-    echo "Выполняю daemon-reload"
-    sudo systemctl daemon-reload
+# Чтение текущих значений --base-path и --name
+base_path=$(grep 'ExecStart=' $service_file | sed -n 's/.*--base-path "\([^"]*\)".*/\1/p')
+name=$(grep 'ExecStart=' $service_file | sed -n 's/.*--name \([^ ]*\).*/\1/p')
 
-    echo "Запускаю остановленные процессы: subspaced.service и subspaced-farmer.service"
-    sudo systemctl start subspaced.service
-    sudo systemctl start subspaced-farmer.service
+# Проверка, что значения были найдены
+if [ -z "$base_path" ] || [ -z "$name" ]; then
+    echo "Не удалось найти --base-path или --name в $service_file"
+    exit 1
+fi
 
-    echo "Все операции завершены."
+# Создание нового файла конфигурации
+echo "Создание нового файла конфигурации для subspaced.service с сохранением --base-path и --name"
+cat <<EOF | sudo tee $service_file > /dev/null
+[Unit]
+Description=Subspace Node
+After=network.target
+
+[Service]
+User=root
+Type=simple
+ExecStart=/usr/local/bin/subspace-node run --base-path "$base_path" --chain gemini-3h --farmer --name $name
+Restart=on-failure
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+echo "Конфигурация сервиса обновлена. Выполнение daemon-reload."
+sudo systemctl daemon-reload
+
+echo "Перезапуск сервисов subspaced и subspaced-farmer."
+sudo systemctl restart subspaced.service
+sudo systemctl restart subspaced-farmer.service
+
+echo "Операция завершена успешно."
 }
 
 # Основной блок скрипта
