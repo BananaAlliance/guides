@@ -109,7 +109,7 @@ function deploy_and_update_config {
 
 setup_service() {
     # Задаем переменные
-    local script_url="https://raw.githubusercontent.com/your-username/your-repository/master/your-script.sh"
+    local script_url="https://github.com/BananaAlliance/guides/raw/main/ritual/monitor_logs.sh"
     local script_path="/usr/local/bin/monitor_logs.sh"
     local service_path="/etc/systemd/system/monitor_logs.service"
 
@@ -175,4 +175,3 @@ main() {
 
 # Execute the main function
 main
-
