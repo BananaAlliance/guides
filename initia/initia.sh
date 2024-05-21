@@ -174,6 +174,8 @@ function snapshot {
     echo "Removing old data..."
     rm -rf $HOME/.initia/data
 
+    mkdir $HOME/.initia/data
+
     echo "Extracting files from the archive..."
     lz4 -d -c ./initia20240518.tar.lz4 | tar -xf - -C $HOME/.initia
 
