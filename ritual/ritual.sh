@@ -168,8 +168,8 @@ main() {
     #install_forge
     install_docker
     setup_repository
-    update_config_files
     deploy_and_update_config
+    update_config_files
     setup_service
 }
 
