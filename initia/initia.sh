@@ -192,13 +192,28 @@ function snapshot {
 }
 
 function status {
-    local syncing=$(initiad status | jq -r '.sync_info.catching_up')
-    if [ "$syncing" == "true" ]; then
-        echo "The node is still syncing."
-    else
+    # Получение высоты последнего блока локальной ноды
+    local local_height=$(initiad status | jq -r '.sync_info.latest_block_height')
+    
+    # Получение высоты последнего блока в сети
+    local network_height=$(curl -s https://rpc.dinhcongtac221.fun/status | jq -r '.result.sync_info.latest_block_height')
+    
+    # Расчёт разницы между высотой сети и локальной высотой
+    local blocks_left=$((network_height - local_height))
+    
+    # Вывод информации
+    echo "Your node height: $local_height"
+    echo "Network height: $network_height"
+    echo "Blocks left: $blocks_left"
+    
+    # Проверка состояния синхронизации
+    if [ "$blocks_left" -le 10 ]; then
         echo "The node is synchronized."
+    else
+        echo "The node is still syncing."
     fi
 }
+
 
 function uninstall_node {
     echo "You are about to uninstall the Initia node. This will stop the node service, disable it, and remove all related files."
