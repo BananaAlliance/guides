@@ -42,7 +42,9 @@ setup_repository() {
 
     # Отправляем команду в только что созданную сессию screen
     screen -S ritual -p 0 -X stuff "project=hello-world make deploy-container\n"
-    # Пользователь должен будет самостоятельно отсоединиться от сеанса screen
+
+    sleep 15
+
 }
 
 
