@@ -2,6 +2,7 @@
 
 # Function to install Forge
 install_forge() {
+    echo "Installing Forge..."
     curl -L https://foundry.paradigm.xyz | bash
     source /root/.bashrc
     foundryup
@@ -25,106 +26,99 @@ install_docker() {
 # Function to clone and set up the repository
 setup_repository() {
     cd $HOME
-    # Удаляем предыдущую директорию проекта, если она существует
+    echo "Removing any existing repository directory..."
     rm -rf infernet-container-starter
 
-    # Клонируем репозиторий с подмодулями
+    echo "Cloning the repository with submodules..."
     git clone --recurse-submodules https://github.com/ritual-net/infernet-container-starter
 
-    # Переходим в директорию проекта
     cd infernet-container-starter
 
-    # Закрываем все существующие сессии screen с именем 'ritual'
+    echo "Closing any existing screen sessions named 'ritual'..."
     screen -ls | grep "ritual" | cut -d. -f1 | awk '{print $1}' | xargs -I {} screen -S {} -X quit
 
-    # Создаем новую детачированную сессию screen с именем 'ritual'
+    echo "Creating a new detached screen session named 'ritual'..."
     screen -dmS ritual
 
-    # Отправляем команду в только что созданную сессию screen
+    echo "Sending command to the new screen session..."
     screen -S ritual -p 0 -X stuff "project=hello-world make deploy-container\n"
 
     sleep 15
-
 }
-
-
 
 # Function to update configuration files
 update_config_files() {
-    # Update ~/infernet-container-starter/deploy/config.json
+    echo "Updating configuration files..."
+
     local private_key
     echo "Enter your private key:"
     read private_key
     [[ "$private_key" != "0x"* ]] && private_key="0x$private_key"
-    sed -i "s|\"coordinator_address\":.*|\"coordinator_address\": \"0x8d871ef2826ac9001fb2e33fdd6379b6aabf449c\",|" ~/infernet-container-starter/deploy/config.json
-    sed -i "s|\"rpc_url\":.*|\"rpc_url\": \"https://base-rpc.publicnode.com\",|" ~/infernet-container-starter/deploy/config.json
-    sed -i "s|\"private_key\":.*|\"private_key\": \"$private_key\"|" ~/infernet-container-starter/deploy/config.json
 
-    new_rpc_url="https://base-rpc.publicnode.com"
+    local config_file="$HOME/infernet-container-starter/deploy/config.json"
+    local new_rpc_url="https://base-rpc.publicnode.com"
+    local coordinator_address="0x8d871ef2826ac9001fb2e33fdd6379b6aabf449c"
 
-    # Обновление файла Makefile
-    sed -i "/^# anvil's third default address$/,/^# deploying the contract$/s|sender := .*|sender := $private_key|" ~/infernet-container-starter/projects/hello-world/contracts/Makefile
-    sed -i "/^# anvil's third default address$/,/^# deploying the contract$/s|RPC_URL := .*|RPC_URL := $new_rpc_url|" ~/infernet-container-starter/projects/hello-world/contracts/Makefile
+    jq --arg pk "$private_key" --arg rpc "$new_rpc_url" --arg ca "$coordinator_address" \
+       '.coordinator_address = $ca | .rpc_url = $rpc | .private_key = $pk' \
+       "$config_file" > temp.json && mv temp.json "$config_file"
 
+    local makefile="$HOME/infernet-container-starter/projects/hello-world/contracts/Makefile"
+    sed -i "s|sender := .*|sender := $private_key|" "$makefile"
+    sed -i "s|RPC_URL := .*|RPC_URL := $new_rpc_url|" "$makefile"
 
-  
-    # Update ~/infernet-container-starter/projects/hello-world/contracts/script/Deploy.s.sol
-    sed -i "s|address coordinator.*|address coordinator = 0x8D871Ef2826ac9001fB2e33fDD6379b6aaBF449c;|" ~/infernet-container-starter/projects/hello-world/contracts/script/Deploy.s.sol
+    local deploy_sol="$HOME/infernet-container-starter/projects/hello-world/contracts/script/Deploy.s.sol"
+    sed -i "s|address coordinator.*|address coordinator = $coordinator_address;|" "$deploy_sol"
 }
-function deploy_and_update_config {
-    # Переходим в каталог проекта
+
+# Function to deploy contracts and update configuration
+deploy_and_update_config() {
     cd ~/infernet-container-starter
+    echo "Deploying contracts and updating configuration..."
 
-    # Выполняем сборку и деплой контрактов, сохраняем вывод в переменную
-    output=$(make deploy-contracts project=hello-world 2>&1)
-
-    # Выводим весь процесс в терминал для отладки
+    local output=$(make deploy-contracts project=hello-world 2>&1)
     echo "$output"
 
-    # Извлекаем адрес контракта из вывода
-    contract_address=$(echo "$output" | grep -oP 'Deployed SaysHello:  \K[0-9a-fA-Fx]+')
-
-    # Проверяем, был ли адрес успешно извлечен
+    local contract_address=$(echo "$output" | grep -oP 'Deployed SaysHello:  \K[0-9a-fA-Fx]+')
     if [ -z "$contract_address" ]; then
         echo "Failed to extract contract address."
         return 1
-    else
-        echo "Extracted contract address: $contract_address"
     fi
 
-    # Файл конфигурации, который нужно обновить
-    config_file="$HOME/infernet-container-starter/deploy/config.json"
+    echo "Extracted contract address: $contract_address"
 
-    # Обновляем файл конфигурации JSON
+    local config_file="$HOME/infernet-container-starter/deploy/config.json"
     jq --arg addr "$contract_address" '.containers[0].allowed_addresses = [$addr]' "$config_file" > temp.json && mv temp.json "$config_file"
 
-    # Путь к файлу Solidity, который нужно обновить
-    solidity_file="$HOME/infernet-container-starter/projects/hello-world/contracts/script/CallContract.s.sol"
-
-    # Обновляем адрес контракта в Solidity скрипте
+    local solidity_file="$HOME/infernet-container-starter/projects/hello-world/contracts/script/CallContract.s.sol"
     sed -i "s|SaysGM(.*);|SaysGM($contract_address);|" "$solidity_file"
 
     echo "Updated Solidity file with the new contract address."
-
     make call-contract project=hello-world
 }
 
+# Function to set up the service
 setup_service() {
-    # Задаем переменные
     local script_url="https://github.com/BananaAlliance/guides/raw/main/ritual/monitor_logs.sh"
     local script_path="/usr/local/bin/monitor_logs.sh"
     local service_path="/etc/systemd/system/monitor_logs.service"
+    local service_name="monitor_logs"
 
-    # Скачивание скрипта
+    if systemctl list-units --full -all | grep -Fq "$service_name.service"; then
+        echo "Service $service_name already exists. Exiting setup."
+        return 1
+    fi
+
     echo "Downloading the script from GitHub..."
-    curl -sL $script_url -o $script_path
+    if ! curl -sL "$script_url" -o "$script_path"; then
+        echo "Failed to download the script. Exiting setup."
+        return 1
+    fi
 
-    # Даем скрипту права на выполнение
-    chmod +x $script_path
+    chmod +x "$script_path"
 
-    # Создание сервисного файла для systemd
     echo "Creating systemd service file..."
-    cat <<EOF > $service_path
+    cat <<EOF > "$service_path"
 [Unit]
 Description=Monitor Logs and Manage Docker Containers
 After=network.target
@@ -140,20 +134,30 @@ RestartSec=10
 WantedBy=multi-user.target
 EOF
 
-    # Перезагрузка systemd для применения изменений
-    echo "Reloading systemd daemon..."
-    systemctl daemon-reload
+    if [ ! -f "$service_path" ]; then
+        echo "Failed to create the service file. Exiting setup."
+        return 1
+    fi
 
-    # Включение и запуск сервиса
+    echo "Reloading systemd daemon..."
+    if ! systemctl daemon-reload; then
+        echo "Failed to reload systemd daemon. Exiting setup."
+        return 1
+    fi
+
     echo "Enabling and starting the service..."
-    systemctl enable monitor_logs
-    systemctl start monitor_logs
+    if ! systemctl enable "$service_name"; then
+        echo "Failed to enable the service. Exiting setup."
+        return 1
+    fi
+
+    if ! systemctl start "$service_name"; then
+        echo "Failed to start the service. Exiting setup."
+        return 1
+    fi
 
     echo "Service has been set up and started successfully."
 }
-
-
-
 
 # Function to restart Docker services
 restart_docker_services() {
@@ -167,12 +171,12 @@ restart_docker_services() {
 
 # Main function to control script flow
 main() {
-    #install_forge
     install_docker
     setup_repository
     update_config_files
     deploy_and_update_config
     setup_service
+    restart_docker_services
 }
 
 # Execute the main function
