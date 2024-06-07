@@ -165,8 +165,48 @@ restart_docker_services() {
     docker restart deploy-redis-1
 }
 
+update_node() {
+    # Перейти в нужную директорию
+    cd ~/infernet-container-starter/deploy || { echo "Не удалось перейти в директорию"; return 1; }
+
+    # Обновить файл docker-compose.yaml
+    sed -i '5s/.*/    image: ritualnetwork\/infernet-node:1.0.0/' docker-compose.yaml
+
+    # Остановить Docker Compose
+    docker compose down
+
+    # Запустить Docker Compose
+    docker compose up
+
+    echo "Нода успешно обновлена."
+}
+
+uninstall_node() {
+    # Спросить подтверждение удаления
+    read -p "Вы уверены, что хотите удалить ноду Ritual? (y/n): " confirm
+    if [[ $confirm != [yY] ]]; then
+        echo "Удаление отменено."
+        return 0
+    fi
+
+    # Закрыть сессию "ritual"
+    screen -ls | grep "ritual" | cut -d. -f1 | awk '{print $1}' | xargs -I {} screen -S {} -X quit
+
+    # Удалить директорию $HOME/infernet-container-starter
+    rm -rf "$HOME/infernet-container-starter"
+
+    # Остановить и удалить сервис monitor_logs.service
+    sudo systemctl stop monitor_logs.service
+    sudo systemctl disable monitor_logs.service
+    sudo rm /etc/systemd/system/monitor_logs.service
+    sudo systemctl daemon-reload
+    sudo systemctl reset-failed
+
+    echo "Нода успешно удалена."
+}
+
 # Main function to control script flow
-main() {
+install_node() {
     #install_forge
     install_docker
     setup_repository
@@ -174,6 +214,24 @@ main() {
     deploy_and_update_config
     setup_service
 }
+
+
+# Обработка аргументов
+case "$1" in
+    install)
+        install_node
+        ;;
+   update) 
+        update_node
+        ;;
+   uninstall_node)
+        uninstall_node
+        ;;
+    *)
+        echo "Usage: $0 {install | uninstall_node | update}"
+        exit 1
+        ;;
+esac
 
 # Execute the main function
 main
