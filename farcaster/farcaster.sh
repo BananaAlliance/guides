@@ -57,16 +57,7 @@ install_node() {
   echo -e "${INFO} ${YELLOW}Установка необходимых пакетов...${NC}"
   sudo apt install curl -y
 
-  read -p "Введите Ethereum Mainnet RPC URL: " eth_rpc
-  read -p "Введите Optimism Mainnet RPC URL: " opt_rpc
-  read -p "Введите Farcaster FID: " farcaster_fid
-
- echo -e "${INFO} ${YELLOW}Запуск установки ноды...${NC}"
-  {
-    echo "$eth_rpc"
-    echo "$opt_rpc"
-    echo "$farcaster_fid"
-  } | curl -sSL https://download.thehubble.xyz/bootstrap.sh | bash
+  curl -sSL https://download.thehubble.xyz/bootstrap.sh | bash
 
   # Получение внешнего IP и вывод ссылки на дашборд
   echo -e "${INFO} ${YELLOW}Получение внешнего IP...${NC}"
@@ -102,7 +93,7 @@ remove_node() {
 # Функция для просмотра логов
 view_logs() {
   echo -е "${INFO} ${YELLOW}Просмотр логов...${NC}"
-  screen -r farcaster
+  docker logs hubble-hubble-1 --since 1m
 }
 
 # Функция для вывода текущих значений RPC и FID
