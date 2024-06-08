@@ -61,15 +61,12 @@ install_node() {
   read -p "Введите Optimism Mainnet RPC URL: " opt_rpc
   read -p "Введите Farcaster FID: " farcaster_fid
 
-  # Запуск скрипта и ввод данных
-  echo -e "${INFO} ${YELLOW}Запуск установки ноды...${NC}"
-  curl -sSL https://download.thehubble.xyz/bootstrap.sh | bash
-
-  # Ожидание ввода данных
-  echo -e "${INFO} ${YELLOW}Ввод данных RPC и FID...${NC}"
-  echo "$eth_rpc"
-  echo "$opt_rpc"
-  echo "$farcaster_fid"
+ echo -e "${INFO} ${YELLOW}Запуск установки ноды...${NC}"
+  {
+    echo "$eth_rpc"
+    echo "$opt_rpc"
+    echo "$farcaster_fid"
+  } | curl -sSL https://download.thehubble.xyz/bootstrap.sh | bash
 
   # Получение внешнего IP и вывод ссылки на дашборд
   echo -e "${INFO} ${YELLOW}Получение внешнего IP...${NC}"
@@ -172,7 +169,7 @@ case "$1" in
     node_status
     ;;  
   *)
-    echo -е "${INFO} ${YELLOW}Использование: $0 {install|update|remove|logs|show-config|change-config}${NC}"
+    echo -е "Использование: {install|update|remove|logs|show-config|change-config}"
     ;;
 esac
 
