@@ -175,7 +175,7 @@ case "$1" in
     node_status
     ;;  
   *)
-    echo -е "${INFO} ${YELLOW}Использование: $0 {install|update|remove|logs|show-config|change-config|status}${NC}"
+    echo -е "${INFO} ${YELLOW}Использование: $0 {install|update|remove|logs|show-config|change-config}${NC}"
     ;;
 esac
 
