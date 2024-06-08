@@ -1,5 +1,9 @@
 #!/bin/bash
 
+echo "-----------------------------------------------------------------------------"
+curl -s https://raw.githubusercontent.com/BananaAlliance/tools/main/logo.sh | bash
+echo "-----------------------------------------------------------------------------"
+
 # Определение цветов
 GREEN='\033[0;32m'
 RED='\033[0;31m'
@@ -98,10 +102,10 @@ view_logs() {
 
 # Функция для вывода текущих значений RPC и FID
 show_config() {
-  echo -е "${INFO} ${YELLOW}Чтение конфигурационного файла...${NC}"
+  echo -е "${YELLOW}Чтение конфигурационного файла...${NC}"
   if [ -f "$HOME/hubble/.env" ]; then
     source "$HOME/hubble/.env"
-    echo -е "${INFO} ${YELLOW}Текущие значения:${NC}"
+    echo -е "${YELLOW}Текущие значения:${NC}"
     echo -е "Ethereum Mainnet RPC URL: ${ETH_MAINNET_RPC_URL:-${RED}Не указано${NC}}"
     echo -е "Optimism Mainnet RPC URL: ${OPTIMISM_L2_RPC_URL:-${RED}Не указано${NC}}"
     echo -е "Farcaster FID: ${HUB_OPERATOR_FID:-${RED}Не указано${NC}}"
@@ -131,6 +135,10 @@ change_config() {
 
     echo -е "${CHECK_MARK} ${GREEN}Значения успешно изменены!${NC}"
     show_config
+
+    $HOME/hubble/hubble.sh down
+
+    $HOME/hubble/hubble.sh up
   else
     echo -е "${CROSS_MARK} ${RED}Изменение значений отменено.${NC}"
   fi
