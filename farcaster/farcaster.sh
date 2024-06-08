@@ -61,7 +61,7 @@ install_node() {
 
   # Получение внешнего IP и вывод ссылки на дашборд
   echo -e "${INFO} ${YELLOW}Получение внешнего IP...${NC}"
-  external_ip=$(curl -s ifconfig.me)
+  external_ip=$(curl -s http://ipv4.icanhazip.com)
   echo -e "${CHECK_MARK} ${GREEN}Установка завершена!${NC}"
   echo -e "${INFO} ${YELLOW}Дашборд доступен по ссылке: http://${external_ip}:3000${NC}"
 }
@@ -160,7 +160,7 @@ case "$1" in
     node_status
     ;;  
   *)
-    echo -е "Использование: {install|update|remove|logs|show-config|change-config}"
+    echo "Использование: {install|update|remove|logs|show-config|change-config}"
     ;;
 esac
 
