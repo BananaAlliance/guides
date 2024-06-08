@@ -97,7 +97,7 @@ remove_node() {
 # Функция для просмотра логов
 view_logs() {
   echo -е "${INFO} ${YELLOW}Просмотр логов...${NC}"
-  docker logs hubble-hubble-1 --since 1m
+  docker logs -f hubble-hubble-1 --since 1m
 }
 
 # Функция для вывода текущих значений RPC и FID
