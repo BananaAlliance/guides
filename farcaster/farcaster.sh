@@ -54,26 +54,22 @@ install_node() {
   echo -e "${INFO} ${YELLOW}Обновление системы...${NC}"
   sudo apt update -y && sudo apt upgrade -y
 
-  echo -e "${INFO} ${YELLOW}Установка screen...${NC}"
-  sudo apt install screen -y
+  echo -e "${INFO} ${YELLOW}Установка необходимых пакетов...${NC}"
+  sudo apt install curl -y
 
   read -p "Введите Ethereum Mainnet RPC URL: " eth_rpc
   read -p "Введите Optimism Mainnet RPC URL: " opt_rpc
   read -p "Введите Farcaster FID: " farcaster_fid
 
-  # Закрытие существующей сессии screen, если есть
-  echo -e "${INFO} ${YELLOW}Закрытие существующей сессии screen...${NC}"
-  screen -S farcaster -X quit
+  # Запуск скрипта и ввод данных
+  echo -e "${INFO} ${YELLOW}Запуск установки ноды...${NC}"
+  curl -sSL https://download.thehubble.xyz/bootstrap.sh | bash
 
-  # Создание новой сессии screen и запуск скрипта
-  echo -e "${INFO} ${YELLOW}Создание новой сессии screen и запуск скрипта...${NC}"
-  screen -dmS farcaster bash -c "curl -sSL https://download.thehubble.xyz/bootstrap.sh | bash"
-
-  # Отправка ввода в сессию screen
-  echo -e "${INFO} ${YELLOW}Отправка данных в сессию screen...${NC}"
-  screen -S farcaster -p 0 -X stuff "$eth_rpc$(printf \\r)"
-  screen -S farcaster -p 0 -X stuff "$opt_rpc$(printf \\r)"
-  screen -S farcaster -p 0 -X stuff "$farcaster_fid$(printf \\r)"
+  # Ожидание ввода данных
+  echo -e "${INFO} ${YELLOW}Ввод данных RPC и FID...${NC}"
+  echo "$eth_rpc"
+  echo "$opt_rpc"
+  echo "$farcaster_fid"
 
   # Получение внешнего IP и вывод ссылки на дашборд
   echo -e "${INFO} ${YELLOW}Получение внешнего IP...${NC}"
@@ -81,6 +77,7 @@ install_node() {
   echo -e "${CHECK_MARK} ${GREEN}Установка завершена!${NC}"
   echo -e "${INFO} ${YELLOW}Дашборд доступен по ссылке: http://${external_ip}:3000${NC}"
 }
+
 
 # Функция для обновления ноды
 update_node() {
