@@ -17,6 +17,89 @@ CHECK_MARK="\xE2\x9C\x85"
 CROSS_MARK="\xE2\x9D\x8C"
 INFO="\xE2\x84\xB9"
 
+REPO="farcasterxyz/hub-monorepo"
+RAWFILE_BASE="https://raw.githubusercontent.com/$REPO"
+LATEST_TAG="@latest"
+SCRIPT_FILE_PATH="scripts/hubble.sh"
+
+
+
+install_jq() {
+    if command -v jq >/dev/null 2>&1; then
+        return 0
+    fi
+
+    echo "Installing jq..."
+
+    # macOS
+    if [[ "$(uname)" == "Darwin" ]]; then
+        if command -v brew >/dev/null 2>&1; then
+            brew install jq
+        else
+            echo "Homebrew is not installed. Please install Homebrew first."
+            return 1
+        fi
+
+    # Ubuntu/Debian
+    elif [[ -f /etc/lsb-release ]] || [[ -f /etc/debian_version ]]; then
+        sudo apt-get update
+        sudo apt-get install -y jq
+
+    # RHEL/CentOS
+    elif [[ -f /etc/redhat-release ]]; then
+        sudo yum install -y jq
+
+    # Fedora
+    elif [[ -f /etc/fedora-release ]]; then
+        sudo dnf install -y jq
+
+    # openSUSE
+    elif [[ -f /etc/os-release ]] && grep -q "ID=openSUSE" /etc/os-release; then
+        sudo zypper install -y jq
+
+    # Arch Linux
+    elif [[ -f /etc/arch-release ]]; then
+        sudo pacman -S jq
+
+    else
+        echo "Unsupported operating system. Please install jq manually."
+        return 1
+    fi
+
+    echo "вњ… jq installed successfully."
+}
+
+# Fetch file from repo at "@latest"
+fetch_file_from_repo() {
+    local file_path="$1"
+    local local_filename="$2"
+    
+    local download_url
+    download_url="$RAWFILE_BASE/$LATEST_TAG/$file_path?t=$(date +%s)"
+
+    # Download the file using curl, and save it to the local filename. If the download fails,
+    # exit with an error.
+    curl -sS -o "$local_filename" "$download_url" || { echo "Failed to fetch $download_url."; exit 1; }
+}
+
+do_bootstrap() {
+    # Make the ~/hubble directory if it doesn't exist
+    mkdir -p ~/hubble
+    
+    local tmp_file
+    tmp_file=$(mktemp)
+    fetch_file_from_repo "$SCRIPT_FILE_PATH" "$tmp_file"
+
+    sed -i 's|local grafana_url="http://127.0.0.1:3000"|local grafana_url="http://127.0.0.1:3031"|' "$tmp_file"
+
+    mv "$tmp_file" ~/hubble/hubble.sh
+    chmod +x ~/hubble/hubble.sh
+
+    # Run the hubble.sh script
+    cd ~/hubble
+    exec ./hubble.sh "upgrade" < /dev/tty
+}
+
 # Функция для проверки последнего изменения логов
 check_log_updates() {
   local last_log_time=$(docker logs hubble-hubble-1 --tail 1 --since 1h --format '{{.Time}}' 2>&1 | tail -n 1)
@@ -61,13 +144,15 @@ install_node() {
   echo -e "${INFO} ${YELLOW}Установка необходимых пакетов...${NC}"
   sudo apt install curl -y
 
-  curl -sSL https://download.thehubble.xyz/bootstrap.sh | bash
+  install_jq
+
+  do_bootstrap
 
   # Получение внешнего IP и вывод ссылки на дашборд
   echo -e "${INFO} ${YELLOW}Получение внешнего IP...${NC}"
   external_ip=$(curl -s http://ipv4.icanhazip.com)
   echo -e "${CHECK_MARK} ${GREEN}Установка завершена!${NC}"
-  echo -e "${INFO} ${YELLOW}Дашборд доступен по ссылке: http://${external_ip}:3000${NC}"
+  echo -e "${INFO} ${YELLOW}Дашборд доступен по ссылке: http://${external_ip}:3031${NC}"
 }
 
 
