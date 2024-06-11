@@ -181,7 +181,7 @@ remove_node() {
 
 # Функция для просмотра логов
 view_logs() {
-  echo -е "${INFO} ${YELLOW}Просмотр логов...${NC}"
+  echo "Просмотр логов..."
   docker logs -f hubble-hubble-1 --since 1m
 }
 
