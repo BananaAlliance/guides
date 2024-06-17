@@ -19,12 +19,15 @@ nodes["Holograph"]="/root/.config/holograph"
 nodes["Nibiru"]="/root/.nibid/config/priv_validator_key.json"
 nodes["Subspace"]="$HOME/.local/share/pulsar/"
 nodes["Elixir"]="$HOME/elixir"
+nodes["Farcaster"]="$HOME/hubble"
 
 declare -A exception_nodes
 exception_nodes["Subspace"]="Для ноды Subspace бэкап файлов не требуется. Пожалуйста, храните вашу мнемоническую фразу в секрете."
 exception_nodes["Elixir"]="Для ноды Elixir бэкап файлов не требуется. Держите ваш Private key от Metamask в секрете."
 exception_nodes["Shardeum"]="Для ноды Shardeum бэкап файлов не требуется. Держите ваш Private key от Metamask в секрете."
 exception_nodes["Holograph"]="Для ноды Holograph бэкап файлов не требуется. Держите ваш Private key от Metamask в секрете."
+exception_nodes["Farcaster"]="Для ноды Farcaster бэкап файлов не требуется."
+
 
 # Статистика
 successful_backups=0

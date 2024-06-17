@@ -20,6 +20,7 @@ nodes["Shardeum"]="/root/.shardeum/"
 nodes["Kroma"]="/root/kroma-up/"
 nodes["Holograph"]="/root/.config/holograph"
 nodes["Minima"]="/root/minimadocker*"
+nodes["Farcaster"]="/root/hubble/"
 
 # Проверка на наличие утилиты bc
 ensure_bc_installed() {

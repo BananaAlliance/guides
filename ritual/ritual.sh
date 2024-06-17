@@ -13,7 +13,7 @@ install_docker() {
         echo "Docker could not be found, installing..."
         sudo apt update && sudo apt upgrade -y
         sudo apt -qy install curl git jq lz4 build-essential screen
-        sudo apt install apt-transport-https ca-certificates curl software-properties-common -qy
+        sudo apt install apt-transport-https ca-certificates curl software-properties-common build-essential -qy
         curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
         sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable"
         sudo apt install docker-ce -qy
@@ -232,6 +232,3 @@ case "$1" in
         exit 1
         ;;
 esac
-
-# Execute the main function
-main
