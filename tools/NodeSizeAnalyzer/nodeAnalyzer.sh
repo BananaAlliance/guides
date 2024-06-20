@@ -21,6 +21,7 @@ nodes["Kroma"]="/root/kroma-up/"
 nodes["Holograph"]="/root/.config/holograph"
 nodes["Minima"]="/root/minimadocker*"
 nodes["Farcaster"]="/root/hubble/"
+nodes["Waku"]="/root/nwaku-compose/"
 
 # Проверка на наличие утилиты bc
 ensure_bc_installed() {
