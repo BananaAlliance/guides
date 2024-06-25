@@ -69,14 +69,16 @@ install_node() {
     echo "Ожидание завершения установки и получение PUBKEY..."
 
     spinner="/-\|"
+    spinpos=0
+    pubkey=""
     while [ -z "$pubkey" ]; do
+        screen -S nubit -p 0 -X hardcopy $HOME/nubit-node/nubit-installation-log.txt
         if [ -f "$HOME/nubit-node/nubit-installation-log.txt" ]; then
             pubkey=$(grep -A 1 "\*\* PUBKEY \*\*" $HOME/nubit-node/nubit-installation-log.txt | tail -n 1)
         fi
-        for i in $(seq 0 3); do
-            echo -ne "\r${spinner:i:1}"
-            sleep 0.1
-        done
+        spinpos=$(( (spinpos + 1) % 4 ))
+        echo -ne "\r${spinner:spinpos:1}"
+        sleep 0.2
     done
     echo ""
 
@@ -120,6 +122,57 @@ install_node() {
         echo "export NUBIT_CUSTOM=$NUBIT_CUSTOM" >> ~/.bashrc
     fi
     source ~/.bashrc
+}
+
+
+# Функция для остановки ноды Nubit
+stop_node() {
+    echo -e "\e[1;34mОстановка ноды Nubit...\e[0m"
+    delay
+
+    # Проверка, установлена ли нода
+    if [ ! -d "$HOME/nubit-node" ]; then
+        echo -e "\e[1;31mНода Nubit не установлена. Пожалуйста, установите ноду перед перезапуском.\e[0m"
+        exit 1
+    fi
+
+    # Закрытие запущенной screen сессии nubit
+    if screen -list | grep -q "nubit"; then
+        echo -e "\e[1;33mЗакрытие текущей screen сессии nubit...\e[0m"
+        screen -S nubit -X quit
+        delay
+    fi
+
+
+    echo -e "\e[1;32mОстановка ноды Nubit успешно завершена!\e[0m"
+}
+
+
+# Функция для перезапуска ноды Nubit
+restart_node() {
+    echo -e "\e[1;34mПерезапуск ноды Nubit...\e[0m"
+    delay
+
+    # Проверка, установлена ли нода
+    if [ ! -d "$HOME/nubit-node" ]; then
+        echo -e "\e[1;31mНода Nubit не установлена. Пожалуйста, установите ноду перед перезапуском.\e[0m"
+        exit 1
+    fi
+
+    # Закрытие запущенной screen сессии nubit
+    if screen -list | grep -q "nubit"; then
+        echo -e "\e[1;33mЗакрытие текущей screen сессии nubit...\e[0m"
+        screen -S nubit -X quit
+        delay
+    fi
+
+    # Запуск новой screen сессии и выполнение скрипта
+    echo "Запуск новой screen сессии и выполнение скрипта..."
+    screen -dmS nubit
+    screen -S nubit -p 0 -X stuff "curl -sL1 https://nubit.sh | bash$(printf \\r)"
+    delay
+
+    echo -e "\e[1;32mПерезапуск ноды Nubit успешно завершен!\e[0m"
 }
 
 # Функция для вывода логов
@@ -225,6 +278,12 @@ case $1 in
         ;;
     show-logs)
         show_logs
+        ;;
+    stop)
+        stop_node
+        ;;
+    restart)
+        restart_node
         ;;
     *)
         usage
