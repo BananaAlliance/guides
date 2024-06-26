@@ -104,6 +104,8 @@ function deploy_and_update_config {
     # Обновляем адрес контракта в Solidity скрипте
     sed -i "s|SaysGM(.*);|SaysGM($contract_address);|" "$solidity_file"
 
+    restart_docker_services
+
     echo "Updated Solidity file with the new contract address."
 
     make call-contract project=hello-world
@@ -158,7 +160,8 @@ EOF
 # Function to restart Docker services
 restart_docker_services() {
     sleep 20
-    docker restart anvil-node
+    docker restart infernet-anvil
+    docker restart infernet-node
     docker restart hello-world
     docker restart deploy-node-1
     docker restart deploy-fluentbit-1
@@ -201,6 +204,13 @@ uninstall_node() {
     sudo rm /etc/systemd/system/monitor_logs.service
     sudo systemctl daemon-reload
     sudo systemctl reset-failed
+
+    docker kill infernet-anvil
+    docker kill infernet-node
+    docker kill hello-world
+    docker kill deploy-node-1
+    docker kill deploy-fluentbit-1
+    docker kill deploy-redis-1
 
     echo "Нода успешно удалена."
 }
