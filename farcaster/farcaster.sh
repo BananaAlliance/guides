@@ -228,8 +228,47 @@ change_config() {
     echo -е "${CROSS_MARK} ${RED}Изменение значений отменено.${NC}"
   fi
 }
+# Функция для запроса нового FID и замены его в файле .env
+change_fid() {
+  local env_file="$HOME/hubble/.env"
 
-# Основная логика скрипта
+  # Проверка существования файла .env
+  if [ ! -f "$env_file" ]; then
+    echo -e "${CROSS_MARK} ${RED}Файл .env не найден.${NC}"
+    return 1
+  fi
+
+  # Запрос нового FID у пользователя
+  read -p "Введите новый Farcaster FID: " new_fid
+
+  # Проверка валидности введенного FID
+  if ! [[ "$new_fid" =~ ^[0-9]+$ ]]; then
+    echo -e "${CROSS_MARK} ${RED}Неверный формат FID. Пожалуйста, введите число.${NC}"
+    return 1
+  fi
+
+  # Замена старого FID на новый в файле .env
+  sed -i "s/^HUB_OPERATOR_FID=.*/HUB_OPERATOR_FID=$new_fid/" "$env_file"
+  echo -e "${CHECK_MARK} ${GREEN}FID успешно обновлен в файле .env!${NC}"
+
+  # Перезапуск ноды
+  echo -e "${INFO} ${YELLOW}Перезапуск ноды...${NC}"
+  docker stop hubble-hubble-1
+  cd ~/hubble
+  exec ./hubble.sh "upgrade" < /dev/tty
+}
+
+
+# Функция для перезапуска ноды
+restart_node() {
+  echo -e "${INFO} ${YELLOW}Перезапуск ноды...${NC}"
+  docker stop hubble-hubble-1
+  cd ~/hubble
+  exec ./hubble.sh "upgrade" < /dev/tty
+  echo -e "${CHECK_MARK} ${GREEN}Нода успешно перезапущена!${NC}"
+}
+
+# Добавление новой опции в case
 case "$1" in
   install)
     install_node
@@ -249,11 +288,16 @@ case "$1" in
   change-config)
     change_config
     ;;
+  change-fid)
+    change_fid
+    ;;
+  restart)
+    restart_node
+    ;;
   status)
     node_status
     ;;  
   *)
-    echo "Использование: {install|update|remove|logs|show-config|change-config}"
+    echo "Использование: {install|update|remove|logs|show-config|change-config|change-fid|restart}"
     ;;
 esac
-
