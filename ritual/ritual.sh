@@ -55,6 +55,7 @@ update_config_files() {
     local private_key
     echo "Enter your private key:"
     read private_key
+    sleep 10
     [[ "$private_key" != "0x"* ]] && private_key="0x$private_key"
     sed -i "s|\"registry_address\":.*|\"registry_address\": \"0x3B1554f346DFe5c482Bb4BA31b880c1C18412170\",|" ~/infernet-container-starter/deploy/config.json
     sed -i "s|\"rpc_url\":.*|\"rpc_url\": \"https://base-rpc.publicnode.com\",|" ~/infernet-container-starter/deploy/config.json
