@@ -17,7 +17,8 @@ while true; do
         if [[ "$log_output" == *"[error    ] Task exited: {'code': -32000, 'message': 'filter not found'} [__main__]"* ]] || 
            [[ "$log_output" == *"Exited main process"* ]]; then
             echo "Detected critical error in logs. Restarting Docker containers..."
-            docker restart anvil-node
+             docker restart infernet-anvil
+            docker restart infernet-node
             docker restart hello-world
             docker restart deploy-node-1
             docker restart deploy-fluentbit-1
