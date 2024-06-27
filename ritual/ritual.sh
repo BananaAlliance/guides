@@ -56,7 +56,7 @@ update_config_files() {
     echo "Enter your private key:"
     read private_key
     [[ "$private_key" != "0x"* ]] && private_key="0x$private_key"
-    sed -i "s|\"registry_address\":.*|\"registry_address\": \"0x8d871ef2826ac9001fb2e33fdd6379b6aabf449c\",|" ~/infernet-container-starter/deploy/config.json
+    sed -i "s|\"registry_address\":.*|\"registry_address\": \"0x3B1554f346DFe5c482Bb4BA31b880c1C18412170\",|" ~/infernet-container-starter/deploy/config.json
     sed -i "s|\"rpc_url\":.*|\"rpc_url\": \"https://base-rpc.publicnode.com\",|" ~/infernet-container-starter/deploy/config.json
     sed -i "s|\"private_key\":.*|\"private_key\": \"$private_key\"|" ~/infernet-container-starter/deploy/config.json
 
@@ -69,7 +69,7 @@ update_config_files() {
 
   
     # Update ~/infernet-container-starter/projects/hello-world/contracts/script/Deploy.s.sol
-    sed -i "s|address registry.*|address registry = 0x8D871Ef2826ac9001fB2e33fDD6379b6aaBF449c;|" ~/infernet-container-starter/projects/hello-world/contracts/script/Deploy.s.sol
+    sed -i "s|address registry.*|address registry = 0x3B1554f346DFe5c482Bb4BA31b880c1C18412170;|" ~/infernet-container-starter/projects/hello-world/contracts/script/Deploy.s.sol
 }
 function deploy_and_update_config {
     # Переходим в каталог проекта
