@@ -95,7 +95,7 @@ update_config_files() {
 # Функция для обновления порта в файле config.json
 update_port() {
     # Определяем путь к файлу config.json
-    local config_file="~/infernet-container-starter/deploy/config.json"
+    local config_file="/root/infernet-container-starter/deploy/config.json"
     
     # Проверяем, установлен ли jq
     if ! command -v jq &> /dev/null; then
