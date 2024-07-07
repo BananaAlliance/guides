@@ -24,6 +24,17 @@ install_docker() {
 
 # Function to clone and set up the repository
 setup_repository() {
+    # Проверяем, установлен ли jq
+    if ! command -v jq &> /dev/null; then
+        echo "jq не установлен. Попытка установить jq..."
+        # Попытка установить jq с помощью менеджера пакетов apt (для Debian/Ubuntu)
+        sudo apt-get update && sudo apt-get install -y jq
+        if [ $? -ne 0 ]; then
+            echo "Не удалось установить jq. Пожалуйста, установите jq вручную."
+            return 1
+        fi
+    fi
+
     cd $HOME
     # Удаляем предыдущую директорию проекта, если она существует
     rm -rf infernet-container-starter
@@ -57,9 +68,17 @@ update_config_files() {
     read private_key
     sleep 10
     [[ "$private_key" != "0x"* ]] && private_key="0x$private_key"
-    sed -i "s|\"registry_address\":.*|\"registry_address\": \"0x3B1554f346DFe5c482Bb4BA31b880c1C18412170\",|" ~/infernet-container-starter/deploy/config.json
-    sed -i "s|\"rpc_url\":.*|\"rpc_url\": \"https://base-rpc.publicnode.com\",|" ~/infernet-container-starter/deploy/config.json
-    sed -i "s|\"private_key\":.*|\"private_key\": \"$private_key\"|" ~/infernet-container-starter/deploy/config.json
+
+    config_file="~/infernet-container-starter/deploy/config.json"
+
+
+    sed -i "s|\"registry_address\":.*|\"registry_address\": \"0x3B1554f346DFe5c482Bb4BA31b880c1C18412170\",|" "$config_file"
+    sed -i "s|\"rpc_url\":.*|\"rpc_url\": \"https://base-rpc.publicnode.com\",|" "$config_file"
+    sed -i "s|\"private_key\":.*|\"private_key\": \"$private_key\"|" "$config_file"
+
+    # Изменение порта в строке port и в строке command
+    sed -i 's/"port": "3000"/"port": "3051"/' "$config_file"
+    sed -i 's/--bind=0.0.0.0:3000/--bind=0.0.0.0:3051/' "$config_file"
 
     new_rpc_url="https://base-rpc.publicnode.com"
 
@@ -72,6 +91,42 @@ update_config_files() {
     # Update ~/infernet-container-starter/projects/hello-world/contracts/script/Deploy.s.sol
     sed -i "s|address registry.*|address registry = 0x3B1554f346DFe5c482Bb4BA31b880c1C18412170;|" ~/infernet-container-starter/projects/hello-world/contracts/script/Deploy.s.sol
 }
+
+# Функция для обновления порта в файле config.json
+update_port() {
+    # Определяем путь к файлу config.json
+    local config_file="~/infernet-container-starter/deploy/config.json"
+    
+    # Проверяем, установлен ли jq
+    if ! command -v jq &> /dev/null; then
+        echo "jq не установлен. Попытка установить jq..."
+        # Попытка установить jq с помощью менеджера пакетов apt (для Debian/Ubuntu)
+        sudo apt-get update && sudo apt-get install -y jq
+        if [ $? -ne 0 ]; then
+            echo "Не удалось установить jq. Пожалуйста, установите jq вручную."
+            return 1
+        fi
+    fi
+
+    echo "Начинаем обновление порта в конфигурационном файле."
+
+    # Временный файл для хранения результатов
+    local temp_file=$(mktemp)
+
+    # Обновляем порт и команду для контейнера hello-world
+    jq '.containers[] | select(.id == "hello-world") | .port = "3051" | .command = "--bind=0.0.0.0:3051 --workers=2"' "$config_file" > "$temp_file" && mv "$temp_file" "$config_file"
+    
+    # Проверяем, успешно ли был обновлен файл
+    if [ $? -eq 0 ]; then
+        echo "Порт успешно обновлен на 3051."
+    else
+        echo "Произошла ошибка при обновлении порта."
+        return 1
+    fi
+
+    echo "Обновление завершено."
+}
+
 function deploy_and_update_config {
     # Переходим в каталог проекта
     cd ~/infernet-container-starter
@@ -232,6 +287,9 @@ case "$1" in
     install)
         install_node
         ;;
+   update_port)
+        update_port
+        ;;
    update) 
         update_node
         ;;
@@ -239,7 +297,7 @@ case "$1" in
         uninstall_node
         ;;
     *)
-        echo "Usage: $0 {install | uninstall_node | update}"
+        echo "Usage: $0 {install | uninstall_node | update | update_port}"
         exit 1
         ;;
 esac
