@@ -122,7 +122,7 @@ update_port() {
     else
         echo "Произошла ошибка при обновлении порта."
         return 1
-    
+    fi
     
     restart_docker_services
 
