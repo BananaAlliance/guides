@@ -203,7 +203,7 @@ function setup_worker() {
 
   local head_id=$(cat head-data/keys/identity) || handle_error "Чтение идентификатора головы"
   rm -rf docker-compose.yml || handle_error "Удаление старого docker-compose.yml"
-  wget https://raw.githubusercontent.com/DOUBLE-TOP/guides/main/allora/docker-compose.yml || handle_error "Загрузка нового docker-compose.yml"
+  wget https://github.com/BananaAlliance/guides/raw/main/allora/docker-compose.yml || handle_error "Загрузка нового docker-compose.yml"
   sed -i "s|ALLORA_HEAD_ID|$head_id|" docker-compose.yml || handle_error "Обновление файла конфигурации"
   sed -i "s|ALLORA_MNEMONIC|$seed_phrase|" docker-compose.yml || handle_error "Обновление файла конфигурации"
 
@@ -211,7 +211,7 @@ function setup_worker() {
   docker compose up -d & spinner $! || handle_error "Запуск Docker контейнеров"
 
   print_step
-  
+
   echo "🚀 Ваш рабочий узел настроен и запущен."
 }
 
