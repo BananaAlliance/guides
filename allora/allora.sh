@@ -164,9 +164,11 @@ function install_node() {
 
   if allorad version; then
     echo "✅ Установленная версия ноды: $(allorad version)"
-    echo "🔑 Пожалуйста, выполните следующую команду для создания кошелька:"
-    echo "    source .profile && allorad keys add testkey"
-    echo "📝 Сохраните сид-фразу, адрес и пароль для дальнейшего использования."
+    echo "🔑 Пожалуйста, введите seed фразу кошелька:"
+    allorad keys add testkey --recover
+    #echo "🔑 Пожалуйста, выполните следующую команду для создания кошелька:"
+    #echo "    source .profile && allorad keys add testkey"
+    #echo "📝 Сохраните сид-фразу, адрес и пароль для дальнейшего использования."
   else
     handle_error "Проверка версии ноды"
   fi
@@ -201,7 +203,7 @@ function setup_worker() {
 
   sleep 10
 
-  local head_id=$(cat head-data/keys/identity) || handle_error "Чтение идентификатора головы"
+  local head_id=$(cat head-data/keys/identity) || handle_error "Чтение head id"
   rm -rf docker-compose.yml || handle_error "Удаление старого docker-compose.yml"
   wget https://github.com/BananaAlliance/guides/raw/main/allora/docker-compose.yml || handle_error "Загрузка нового docker-compose.yml"
   sed -i "s|ALLORA_HEAD_ID|$head_id|" docker-compose.yml || handle_error "Обновление файла конфигурации"
