@@ -49,7 +49,7 @@ configure_ngrok() {
 
     screen -ls | grep "ngrok_session" | cut -d. -f1 | awk '{print $1}' | xargs -I {} screen -S {} -X quit
     screen -dmS ngrok_session
-    screen -S ngrok_session -p 0 -X stuff "ngrok http 3031\n"
+    screen -S ngrok_session -p 0 -X stuff "ngrok http 3032\n"
 }
 
 prompt_user_input() {
@@ -61,12 +61,20 @@ prompt_user_input() {
     read -p $'\e[33mВведите GROQ_API_KEY: \e[0m' GROQ_API_KEY
 }
 
+
+get_external_ip() {
+    EXTERNAL_IP=$(curl -s ifconfig.me)
+    WEBHOOK_URL="http://${EXTERNAL_IP}:3032"
+}
+
+
 create_env_file() {
+    get_external_ip
     echo -e "\e[34m📂 Создаем файл окружения...\e[0m"
     mkdir chasm
     cd chasm
     cat <<EOF > .env
-PORT=3001
+PORT=3032
 LOGGER_LEVEL=debug
 
 # Chasm
@@ -87,20 +95,20 @@ EOF
 
 configure_firewall() {
     echo -e "\e[34m🔥 Настраиваем брандмауэр...\e[0m"
-    sudo ufw allow 3001
+    sudo ufw allow 3032
 }
 
 run_docker_container() {
     echo -e "\e[34m🚀 Запускаем Docker контейнер...\e[0m"
     docker pull chasmtech/chasm-scout
-    docker run -d --restart=always --env-file ./.env -p 3001:3001 --name scout chasmtech/chasm-scout
+    docker run -d --restart=always --env-file ./.env -p 3032:3032 --name scout chasmtech/chasm-scout
 }
 
 restart_node() {
     echo -e "\e[34m🔄 Перезапускаем ноду...\e[0m"
     docker stop scout
     docker rm scout
-    docker run -d --restart=always --env-file ./.env -p 3001:3001 --name scout chasmtech/chasm-scout
+    docker run -d --restart=always --env-file ./.env -p 3032:3032 --name scout chasmtech/chasm-scout
 }
 
 main() {
@@ -121,7 +129,8 @@ main() {
             echo -e "\e[34m🗑️ Удаляем ноду...\e[0m"
             docker stop scout
             docker rm scout
-            sudo ufw delete allow 3001
+            sudo ufw delete allow 3032
+            rm rf /root/chasm
             echo -e "\e[32m✅ Нода успешно удалена!\e[0m"
             ;;
         restart)
