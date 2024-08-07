@@ -75,7 +75,7 @@ prompt_user_input() {
 
 
 get_external_ip() {
-    EXTERNAL_IP=$(curl -s ifconfig.me)
+    EXTERNAL_IP=$(curl -s https://api.ipify.org)
     if [ -z "$EXTERNAL_IP" ]; then
         echo -e "\e[31m❌ Не удалось получить внешний IP адрес.\e[0m"
         exit 1
