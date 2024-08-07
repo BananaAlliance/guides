@@ -64,15 +64,26 @@ prompt_user_input() {
 
 get_external_ip() {
     EXTERNAL_IP=$(curl -s ifconfig.me)
+    if [ -z "$EXTERNAL_IP" ]; then
+        echo -e "\e[31m❌ Не удалось получить внешний IP адрес.\e[0m"
+        exit 1
+    fi
     WEBHOOK_URL="http://${EXTERNAL_IP}:3032"
 }
-
 
 create_env_file() {
     get_external_ip
     echo -e "\e[34m📂 Создаем файл окружения...\e[0m"
-    mkdir chasm
+    cd $HOME
+    if [ ! -d "chasm" ]; then
+        mkdir chasm
+    else
+        echo -e "\e[33m⚠️ Директория 'chasm' уже существует. Используем существующую директорию.\e[0m"
+    fi
     cd chasm
+    if [ -f ".env" ]; then
+        echo -e "\e[33m⚠️ Файл '.env' уже существует. Перезаписываем файл.\e[0m"
+    fi
     cat <<EOF > .env
 PORT=3032
 LOGGER_LEVEL=debug
