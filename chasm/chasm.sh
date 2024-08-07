@@ -1,6 +1,6 @@
 #!/bin/bash
 
-REPO_URL="https://raw.githubusercontent.com/username/repository/branch/version.txt"
+REPO_URL="https://github.com/BananaAlliance/guides/raw/main/chasm/version.txt"
 
 get_version() {
     echo -e "\e[34m🔍 Проверка версии скрипта...\e[0m"
