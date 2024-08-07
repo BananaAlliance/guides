@@ -1,5 +1,17 @@
 #!/bin/bash
 
+REPO_URL="https://raw.githubusercontent.com/username/repository/branch/version.txt"
+
+get_version() {
+    echo -e "\e[34m🔍 Проверка версии скрипта...\e[0m"
+    SCRIPT_VERSION=$(curl -s $REPO_URL)
+    if [ -z "$SCRIPT_VERSION" ]; then
+        echo -e "\e[31m❌ Не удалось получить версию скрипта.\e[0m"
+        exit 1
+    fi
+    echo -e "\e[34mВерсия скрипта: $SCRIPT_VERSION\e[0m"
+}
+
 install_dependencies() {
     echo -e "\e[34m🔧 Устанавливаем зависимости...\e[0m"
     sudo apt-get update && sudo apt-get upgrade -y
@@ -123,6 +135,7 @@ restart_node() {
 }
 
 main() {
+    get_version
     case $1 in
         install)
             install_dependencies
