@@ -89,8 +89,21 @@ function install_essential_packages_and_go() {
 function install_docker() {
   if ! command -v docker &> /dev/null; then
     echo "🐳 Обнаружено отсутствие Docker. Инициируем установку..."
-    curl -fsSL https://github.com/BananaAlliance/tools/raw/main/docker.sh -o get-docker.sh || handle_error "Скачивание скрипта установки Docker"
-    sh get-docker.sh || handle_error "Установка Docker"
+    sudo install -m 0755 -d /etc/apt/keyrings
+    for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do sudo apt-get remove $pkg; done
+    sudo apt-get update
+    sudo apt-get install ca-certificates curl
+    sudo install -m 0755 -d /etc/apt/keyrings
+    sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+    sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+    echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo \"$VERSION_CODENAME\") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+    sudo apt-get update
+    sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin screen
     echo "🐳 Установка Docker завершена успешно."
     sleep 2
   else
@@ -182,6 +195,7 @@ function remove_node() {
 }
 
 # Настройка рабочего узла (воркера)
+# Настройка рабочего узла (воркера)
 function setup_worker() {
   print_step
   echo "🔧 Настройка рабочего узла для Allora..."
@@ -190,31 +204,64 @@ function setup_worker() {
 
   print_step
 
+   if [ -d "$HOME/basic-coin-prediction-node" ]; then
+    echo "⚠️ Директория basic-coin-prediction-node уже существует. Удалить её? (y/n):"
+    read -r delete_dir
+    if [ "$delete_dir" == "y" ]; then
+      rm -rf "$HOME/basic-coin-prediction-node" || handle_error "Удаление существующей директории"
+    else
+      echo "❌ Установка прервана. Пожалуйста, удалите директорию вручную и повторите попытку."
+      exit 1
+    fi
+  fi
+
   cd $HOME && git clone https://github.com/allora-network/basic-coin-prediction-node || handle_error "Клонирование репозитория воркера"
-  cd basic-coin-prediction-node
-
-  mkdir worker-data head-data || handle_error "Создание директорий"
-  sudo chmod -R 777 worker-data head-data || handle_error "Изменение прав доступа"
-
-  sudo docker run -it --entrypoint=bash -v "$PWD/head-data:/data" alloranetwork/allora-inference-base:latest -c "mkdir -p /data/keys && (cd /data/keys && allora-keys)" &
-  spinner $! || handle_error "Настройка head-data"
-  sudo docker run -it --entrypoint=bash -v "$PWD/worker-data:/data" alloranetwork/allora-inference-base:latest -c "mkdir -p /data/keys && (cd /data/keys && allora-keys)" &
-  spinner $! || handle_error "Настройка worker-data"
 
   sleep 10
 
-  local head_id=$(cat head-data/keys/identity) || handle_error "Чтение head id"
-  rm -rf docker-compose.yml || handle_error "Удаление старого docker-compose.yml"
-  wget https://github.com/BananaAlliance/guides/raw/main/allora/docker-compose.yml || handle_error "Загрузка нового docker-compose.yml"
-  sed -i "s|ALLORA_HEAD_ID|$head_id|" docker-compose.yml || handle_error "Обновление файла конфигурации"
-  sed -i "s|ALLORA_MNEMONIC|$seed_phrase|" docker-compose.yml || handle_error "Обновление файла конфигурации"
+  cd $HOME
 
-  docker compose build & spinner $! || handle_error "Сборка Docker контейнеров"
+  # Новые шаги
+  cd basic-coin-prediction-node
+  
+  # Копирование файла config.example.json в config.json
+  cp config.example.json config.json || handle_error "Копирование файла конфигурации"
+  
+  # Замена значений в файле config.json
+  sed -i "s/\"addressKeyName\": \".*\"/\"addressKeyName\": \"testkey\"/" config.json || handle_error "Замена ключа addressKeyName"
+  sed -i "s/\"addressRestoreMnemonic\": \".*\"/\"addressRestoreMnemonic\": \"$seed_phrase\"/" config.json || handle_error "Замена сид-фразы"
+  sed -i "s|\"nodeRpc\": \".*\"|\"nodeRpc\": \"https://sentries-rpc.testnet-1.testnet.allora.network/\"|" config.json || handle_error "Замена nodeRpc"
+
+  # Добавление воркеров
+  sed -i "/\"worker\": \[/a\\
+  {\\
+        \"topicId\": 2,\\
+        \"inferenceEntrypointName\": \"api-worker-reputer\",\\
+        \"loopSeconds\": 5,\\
+        \"parameters\": {\\
+          \"InferenceEndpoint\": \"http://localhost:8000/inference/{Token}\",\\
+          \"Token\": \"ETH\"\\
+        }\\
+      },\\
+  {\\
+        \"topicId\": 3,\\
+        \"inferenceEntrypointName\": \"api-worker-reputer\",\\
+        \"loopSeconds\": 5,\\
+        \"parameters\": {\\
+          \"InferenceEndpoint\": \"http://localhost:8000/inference/{Token}\",\\
+          \"Token\": \"ETH\"\\
+        }\\
+      }" config.json || handle_error "Добавление воркеров в конфигурацию"
+
+  chmod +x init.config
+
+  ./init.config 
+
   docker compose up -d & spinner $! || handle_error "Запуск Docker контейнеров"
 
   print_step
 
-  echo "🚀 Ваш рабочий узел настроен и запущен."
+  echo "🚀 Ваш воркер настроен и запущен."
 }
 
 # Вывод логов
