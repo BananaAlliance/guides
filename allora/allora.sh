@@ -290,7 +290,7 @@ EOL
 # Вывод логов
 function show_logs() {
   echo "📜 Отображение логов работы ноды Allora..."
-  docker compose -f $HOME/basic-coin-prediction-node/docker-compose.yml logs -f || handle_error "Вывод логов"
+  docker compose logs -f worker || handle_error "Вывод логов воркера"
 }
 
 # Проверка статуса ноды
