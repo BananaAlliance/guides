@@ -195,7 +195,6 @@ function remove_node() {
 }
 
 # Настройка рабочего узла (воркера)
-# Настройка рабочего узла (воркера)
 function setup_worker() {
   print_step
   echo "🔧 Настройка рабочего узла для Allora..."
@@ -204,7 +203,10 @@ function setup_worker() {
 
   print_step
 
-   if [ -d "$HOME/basic-coin-prediction-node" ]; then
+  if [ -d "$HOME/basic-coin-prediction-node" ]; then
+    cd $HOME && cd basic-coin-prediction-node
+    docker compose down -v
+    docker container prune
     echo "⚠️ Директория basic-coin-prediction-node уже существует. Удалить её? (y/n):"
     read -r delete_dir
     if [ "$delete_dir" == "y" ]; then
@@ -223,45 +225,66 @@ function setup_worker() {
 
   # Новые шаги
   cd basic-coin-prediction-node
-  
-  # Копирование файла config.example.json в config.json
-  cp config.example.json config.json || handle_error "Копирование файла конфигурации"
-  
-  # Замена значений в файле config.json
-  sed -i "s/\"addressKeyName\": \".*\"/\"addressKeyName\": \"testkey\"/" config.json || handle_error "Замена ключа addressKeyName"
-  sed -i "s/\"addressRestoreMnemonic\": \".*\"/\"addressRestoreMnemonic\": \"$seed_phrase\"/" config.json || handle_error "Замена сид-фразы"
-  sed -i "s|\"nodeRpc\": \".*\"|\"nodeRpc\": \"https://sentries-rpc.testnet-1.testnet.allora.network/\"|" config.json || handle_error "Замена nodeRpc"
 
-  # Добавление воркеров
-  sed -i "/\"worker\": \[/a\\
-  {\\
-        \"topicId\": 2,\\
-        \"inferenceEntrypointName\": \"api-worker-reputer\",\\
-        \"loopSeconds\": 5,\\
-        \"parameters\": {\\
-          \"InferenceEndpoint\": \"http://localhost:8000/inference/{Token}\",\\
-          \"Token\": \"ETH\"\\
-        }\\
-      },\\
-  {\\
-        \"topicId\": 3,\\
-        \"inferenceEntrypointName\": \"api-worker-reputer\",\\
-        \"loopSeconds\": 5,\\
-        \"parameters\": {\\
-          \"InferenceEndpoint\": \"http://localhost:8000/inference/{Token}\",\\
-          \"Token\": \"ETH\"\\
-        }\\
-      }" config.json || handle_error "Добавление воркеров в конфигурацию"
+  # Создание нового файла config.json с данными
+  cat > config.json <<EOL
+{
+    "wallet": {
+        "addressKeyName": "testkey",
+        "addressRestoreMnemonic": "$seed_phrase",
+        "alloraHomeDir": "",
+        "gas": "1000000",
+        "gasAdjustment": 1.0,
+        "nodeRpc": "https://sentries-rpc.testnet-1.testnet.allora.network/",
+        "maxRetries": 1,
+        "delay": 1,
+        "submitTx": false
+    },
+    "worker": [
+        {
+            "topicId": 1,
+            "inferenceEntrypointName": "api-worker-reputer",
+            "loopSeconds": 5,
+            "parameters": {
+                "InferenceEndpoint": "http://inference:8000/inference/{Token}",
+                "Token": "ETH"
+            }
+        },
+        {
+            "topicId": 2,
+            "inferenceEntrypointName": "api-worker-reputer",
+            "loopSeconds": 5,
+            "parameters": {
+                "InferenceEndpoint": "http://inference:8000/inference/{Token}",
+                "Token": "ETH"
+            }
+        },
+        {
+            "topicId": 7,
+            "inferenceEntrypointName": "api-worker-reputer",
+            "loopSeconds": 5,
+            "parameters": {
+                "InferenceEndpoint": "http://inference:8000/inference/{Token}",
+                "Token": "ETH"
+            }
+        }
+    ]
+}
+EOL
 
-  chmod +x init.config
+  # Присвоение прав на выполнение и запуск init.config
+  chmod +x init.config || handle_error "Установка прав на выполнение для init.config"
+  ./init.config || handle_error "Запуск init.config"
 
-  ./init.config 
+  # Открываем файл model.py и меняем строку с intervals
+  sed -i 's/intervals = .*/intervals = ["10m", "20m", "1h", "1d"]/' model.py || handle_error "Изменение intervals в model.py"
 
-  docker compose up -d & spinner $! || handle_error "Запуск Docker контейнеров"
+  # Запуск Docker контейнеров
+  docker compose up -d --build & spinner $! || handle_error "Запуск и сборка Docker контейнеров"
 
   print_step
 
-  echo "🚀 Ваш воркер настроен и запущен."
+  echo "🚀 Ваш рабочий узел настроен и запущен."
 }
 
 # Вывод логов
