@@ -214,7 +214,7 @@ function setup_workers() {
 }
 
 function setup_worker() {
-  local repo_url="https://github.com/sicmundu/basic-coin-prediction-node.git"
+  local repo_url="https://github.com/nhunamit/basic-coin-prediction-node.git"
   local repo_dir="basic-coin-prediction-node"
   local worker_dir=$1
   local branch_name=$2
