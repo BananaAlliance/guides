@@ -306,13 +306,13 @@ function main() {
       remove_node
       ;;
     "setup_workers")
-      setup_worker
+      setup_workers
       ;;
     "show-logs")
       show_logs
       ;;
     *)
-      echo "⚠️ Указано неверное действие: $action. Доступные опции: 'install', 'remove', 'setup-worker', 'show-logs'"
+      echo "⚠️ Указано неверное действие: $action. Доступные опции: 'install', 'remove', 'setup_workers', 'show-logs'"
       exit 2
       ;;
   esac
