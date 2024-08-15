@@ -194,98 +194,68 @@ function remove_node() {
   echo "🧹 Нода Allora успешно удалена."
 }
 
-# Настройка рабочего узла (воркера)
-function setup_worker() {
+# Настройка рабочих узлов (воркеров)
+function setup_workers() {
   print_step
-  echo "🔧 Настройка рабочего узла для Allora..."
-  echo "🔑 Введите сид-фразу для кошелька воркера:"
+  echo "🔧 Настройка рабочих узлов для Allora..."
+  echo "🔑 Введите сид-фразу для кошельков воркеров:"
   read seed_phrase
 
-  print_step
+  # Настройка первого воркера
+  setup_worker "worker1-10m" "worker1-10m" "$seed_phrase"
 
-  if [ -d "$HOME/basic-coin-prediction-node" ]; then
-    cd $HOME && cd basic-coin-prediction-node
-    docker compose down -v
-    docker container prune
-    echo "⚠️ Директория basic-coin-prediction-node уже существует. Удалить её? (y/n):"
+  # Настройка второго воркера
+  setup_worker "worker2-24h" "worker2-24h" "$seed_phrase"
+
+  # Настройка третьего воркера
+  setup_worker "worker3-20m" "worker3-20m" "$seed_phrase"
+
+  echo "🚀 Все рабочие узлы настроены и запущены."
+}
+
+function setup_worker() {
+  local repo_url="https://github.com/sicmundu/basic-coin-prediction-node.git"
+  local repo_dir="basic-coin-prediction-node"
+  local worker_dir=$1
+  local branch_name=$2
+  local seed_phrase=$3
+
+  # Проверка, существует ли уже директория
+  if [ -d "$HOME/$worker_dir" ]; then
+    echo "⚠️ Директория $worker_dir уже существует. Удалить её? (y/n):"
     read -r delete_dir
     if [ "$delete_dir" == "y" ]; then
-      rm -rf "$HOME/basic-coin-prediction-node" || handle_error "Удаление существующей директории"
+      rm -rf "$HOME/$worker_dir" || handle_error "Удаление существующей директории $worker_dir"
     else
-      echo "❌ Установка прервана. Пожалуйста, удалите директорию вручную и повторите попытку."
-      exit 1
+      echo "❌ Настройка прервана для $worker_dir. Пожалуйста, удалите директорию вручную и повторите попытку."
+      return 1
     fi
   fi
 
-  cd $HOME && git clone https://github.com/allora-network/basic-coin-prediction-node || handle_error "Клонирование репозитория воркера"
+  cd $HOME && git clone $repo_url || handle_error "Клонирование репозитория воркера"
 
-  sleep 10
+  mv $repo_dir $worker_dir || handle_error "Переименование директории репозитория"
 
-  cd $HOME
+  cd $worker_dir || handle_error "Переход в директорию $worker_dir"
 
-  # Новые шаги
-  cd basic-coin-prediction-node
+  git branch -a || handle_error "Просмотр доступных веток"
 
-  # Создание нового файла config.json с данными
-  cat > config.json <<EOL
-{
-    "wallet": {
-        "addressKeyName": "testkey",
-        "addressRestoreMnemonic": "$seed_phrase",
-        "alloraHomeDir": "",
-        "gas": "1000000",
-        "gasAdjustment": 1.0,
-        "nodeRpc": "https://sentries-rpc.testnet-1.testnet.allora.network/",
-        "maxRetries": 1,
-        "delay": 1,
-        "submitTx": false
-    },
-    "worker": [
-        {
-            "topicId": 1,
-            "inferenceEntrypointName": "api-worker-reputer",
-            "loopSeconds": 5,
-            "parameters": {
-                "InferenceEndpoint": "http://inference:8000/inference/{Token}",
-                "Token": "ETH"
-            }
-        },
-        {
-            "topicId": 2,
-            "inferenceEntrypointName": "api-worker-reputer",
-            "loopSeconds": 5,
-            "parameters": {
-                "InferenceEndpoint": "http://inference:8000/inference/{Token}",
-                "Token": "ETH"
-            }
-        },
-        {
-            "topicId": 7,
-            "inferenceEntrypointName": "api-worker-reputer",
-            "loopSeconds": 5,
-            "parameters": {
-                "InferenceEndpoint": "http://inference:8000/inference/{Token}",
-                "Token": "ETH"
-            }
-        }
-    ]
-}
-EOL
+  git checkout $branch_name || handle_error "Переключение на ветку $branch_name"
 
-  # Присвоение прав на выполнение и запуск init.config
+  git branch -a || handle_error "Проверка текущей ветки"
+
+  # Замена значений в config.json
+  sed -i "s/\"addressKeyName\": \".*\"/\"addressKeyName\": \"testkey\"/" config.json || handle_error "Замена ключа addressKeyName в конфиге"
+  sed -i "s/\"addressRestoreMnemonic\": \".*\"/\"addressRestoreMnemonic\": \"$seed_phrase\"/" config.json || handle_error "Замена сид-фразы в конфиге"
+
   chmod +x init.config || handle_error "Установка прав на выполнение для init.config"
   ./init.config || handle_error "Запуск init.config"
 
-  # Открываем файл model.py и меняем строку с intervals
-  sed -i 's/intervals = .*/intervals = ["10m", "20m", "1h", "1d"]/' model.py || handle_error "Изменение intervals в model.py"
+  docker compose up -d || handle_error "Запуск воркера.."
 
-  # Запуск Docker контейнеров
-  docker compose up -d --build & spinner $! || handle_error "Запуск и сборка Docker контейнеров"
-
-  print_step
-
-  echo "🚀 Ваш рабочий узел настроен и запущен."
+  cd $HOME
 }
+
 
 # Вывод логов
 function show_logs() {
@@ -335,7 +305,7 @@ function main() {
     "remove")
       remove_node
       ;;
-    "setup-worker")
+    "setup_workers")
       setup_worker
       ;;
     "show-logs")
