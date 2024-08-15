@@ -248,8 +248,8 @@ function setup_worker() {
   sed -i "s/\"addressKeyName\": \".*\"/\"addressKeyName\": \"testkey\"/" config.json || handle_error "Замена ключа addressKeyName в конфиге"
   sed -i "s/\"addressRestoreMnemonic\": \".*\"/\"addressRestoreMnemonic\": \"$seed_phrase\"/" config.json || handle_error "Замена сид-фразы в конфиге"
 
-  chmod +x init.config || handle_error "Установка прав на выполнение для init.config"
-  ./init.config || handle_error "Запуск init.config"
+  chmod +x init.config 
+  ./init.config
 
   docker compose up -d || handle_error "Запуск воркера.."
 
