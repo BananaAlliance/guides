@@ -39,7 +39,7 @@ prepare_server() {
     log "${COLOR_BLUE}🔄 Обновляем сервер и устанавливаем необходимые пакеты...${COLOR_RESET}"
     sudo apt-get update -y && sudo apt-get upgrade -y || handle_error "Не удалось обновить сервер."
 
-    local packages=("curl" "software-properties-common" "ca-certificates" "apt-transport-https")
+    local packages=("curl" "software-properties-common" "ca-certificates" "apt-transport-https" "screen")
     for package in "${packages[@]}"; do
         check_and_install_package "$package"
     done
@@ -74,6 +74,9 @@ install_node() {
     
     log "${COLOR_GREEN}🎉 Нода инициализирована! Скопируйте account_id и public_key и зарегистрируйте их на сайте.${COLOR_RESET}"
     log "${COLOR_CYAN}📁 Файл credentials.json сохранен в директории $HOME/nillion/accuser.${COLOR_RESET}"
+
+    log "${COLOR_YELLOW}🚰 ВАЖНО: Перед началом работы убедитесь, что вы получили токены Nillion на ваш кошелек. Перейдите на сайт крана и запросите токены: https://faucet.testnet.nillion.com/${COLOR_RESET}"
+
 }
 
 # Проверка времени перед запуском следующего шага
@@ -84,7 +87,7 @@ check_time_limit() {
         time_diff=$((current_time - last_run))
 
         if [ $time_diff -lt 2400 ]; then
-            log "${COLOR_YELLOW}⏳ Пожалуйста, подождите еще $((2400 - time_diff)) секунд перед запуском последнего шага.${COLOR_RESET}"
+            log "${COLOR_YELLOW}⏳ Пожалуйста, подождите еще $((1200 - time_diff)) секунд перед запуском последнего шага.${COLOR_RESET}"
             exit 1
         fi
     fi
@@ -95,9 +98,6 @@ run_final_step() {
     log "${COLOR_BLUE}🕒 Запуск финального шага...${COLOR_RESET}"
     
     check_time_limit
-
-    log "${COLOR_YELLOW}⏳ Подождите 40-60 минут перед запуском этого шага.${COLOR_RESET}"
-    sleep 2400
 
     log "${COLOR_BLUE}🚀 Запуск процесса accuser...${COLOR_RESET}"
     screen -dmS nillion_accuser docker run -v $HOME/nillion/accuser:/var/tmp nillion/retailtoken-accuser:v1.0.0 accuse --rpc-endpoint "https://testnet-nillion-rpc.lavenderfive.com" --block-start 5098941
@@ -135,7 +135,7 @@ display_help() {
     echo -e "${COLOR_BLUE}🆘 Доступные команды:${COLOR_RESET}"
     echo -e "${COLOR_GREEN}install${COLOR_RESET}   - Установка ноды: подготовка сервера, установка Docker, установка и инициализация ноды."
     echo -e "${COLOR_GREEN}remove${COLOR_RESET}    - Удаление ноды: удаляет ноду и все связанные с ней файлы (с подтверждением)."
-    echo -e "${COLOR_GREEN}final${COLOR_RESET}     - Финальный шаг: запуск процесса обвинения через 40-60 минут."
+    echo -e "${COLOR_GREEN}final${COLOR_RESET}     - Финальный шаг: запуск процесса accuser через 40-60 минут."
     echo -e "${COLOR_GREEN}help${COLOR_RESET}      - Помощь: отображает это сообщение."
 }
 
