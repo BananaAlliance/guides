@@ -1,5 +1,10 @@
 #!/bin/bash
 
+
+echo "-----------------------------------------------------------------------------"
+curl -s https://raw.githubusercontent.com/BananaAlliance/tools/main/logo.sh | bash
+echo "-----------------------------------------------------------------------------"
+
 # Цвета для оформления
 COLOR_RED="\e[31m"
 COLOR_GREEN="\e[32m"
