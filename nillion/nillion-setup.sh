@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 echo "-----------------------------------------------------------------------------"
 curl -s https://raw.githubusercontent.com/BananaAlliance/tools/main/logo.sh | bash
 echo "-----------------------------------------------------------------------------"
@@ -79,31 +78,30 @@ install_node() {
 
 }
 
-# Проверка времени перед запуском следующего шага
-check_time_limit() {
-    if [ -f "$HOME/nillion/accuser/timestamp" ]; then
-        last_run=$(cat $HOME/nillion/accuser/timestamp)
-        current_time=$(date +%s)
-        time_diff=$((current_time - last_run))
-
-        if [ $time_diff -lt 2400 ]; then
-            log "${COLOR_YELLOW}⏳ Пожалуйста, подождите еще $((1200 - time_diff)) секунд перед запуском последнего шага.${COLOR_RESET}"
-            exit 1
-        fi
-    fi
-}
-
-# Запуск последнего шага
-run_final_step() {
-    log "${COLOR_BLUE}🕒 Запуск финального шага...${COLOR_RESET}"
+# Функция запуска процесса accuser
+run_accuser() {
+    log "${COLOR_BLUE}🕒 Запуск процесса accuser...${COLOR_RESET}"
     
-    check_time_limit
+    echo -e "${COLOR_YELLOW}Введите номер блока для запуска (например, 5159667):${COLOR_RESET}"
+    read block_start
 
-    log "${COLOR_BLUE}🚀 Запуск процесса accuser...${COLOR_RESET}"
-    screen -dmS nillion_accuser docker run -v $HOME/nillion/accuser:/var/tmp nillion/retailtoken-accuser:v1.0.0 accuse --rpc-endpoint "https://testnet-nillion-rpc.lavenderfive.com" --block-start 5159667
+    screen -dmS nillion_accuser docker run -v $HOME/nillion/accuser:/var/tmp nillion/retailtoken-accuser:v1.0.0 accuse --rpc-endpoint "https://testnet-nillion-rpc.lavenderfive.com" --block-start $block_start
     log "${COLOR_GREEN}🎉 Процесс accuser запущен в screen сессии 'nillion_accuser'.${COLOR_RESET}"
 
     echo $(date +%s) > $HOME/nillion/accuser/timestamp
+}
+
+# Функция остановки процесса accuser
+stop_accuser() {
+    log "${COLOR_BLUE}🛑 Останавливаем процесс accuser...${COLOR_RESET}"
+    screen -S nillion_accuser -X quit || handle_error "Не удалось остановить процесс accuser."
+    log "${COLOR_GREEN}✅ Процесс accuser успешно остановлен.${COLOR_RESET}"
+}
+
+# Функция рестарта процесса accuser
+restart_accuser() {
+    stop_accuser
+    run_accuser
 }
 
 # Подтверждение удаления ноды
@@ -133,31 +131,48 @@ remove_node() {
 # Функция помощи
 display_help() {
     echo -e "${COLOR_BLUE}🆘 Доступные команды:${COLOR_RESET}"
-    echo -e "${COLOR_GREEN}install${COLOR_RESET}   - Установка ноды: подготовка сервера, установка Docker, установка и инициализация ноды."
-    echo -e "${COLOR_GREEN}remove${COLOR_RESET}    - Удаление ноды: удаляет ноду и все связанные с ней файлы (с подтверждением)."
-    echo -e "${COLOR_GREEN}final${COLOR_RESET}     - Финальный шаг: запуск процесса accuser через 40-60 минут."
-    echo -e "${COLOR_GREEN}help${COLOR_RESET}      - Помощь: отображает это сообщение."
+    echo -e "${COLOR_GREEN}1${COLOR_RESET} - Установить ноду: подготовка сервера, установка Docker, установка и инициализация ноды."
+    echo -e "${COLOR_GREEN}2${COLOR_RESET} - Запустить ноду: запуск процесса accuser."
+    echo -e "${COLOR_GREEN}3${COLOR_RESET} - Остановить ноду: остановка процесса accuser."
+    echo -e "${COLOR_GREEN}4${COLOR_RESET} - Рестарт ноды: остановка и повторный запуск процесса accuser."
+    echo -e "${COLOR_GREEN}5${COLOR_RESET} - Удалить ноду: удаление ноды и всех связанных с ней файлов."
+    echo -e "${COLOR_GREEN}6${COLOR_RESET} - Помощь: отображает это сообщение."
 }
 
 # Основная функция управления
 main() {
-    case $1 in
-        install)
+    log "${COLOR_BLUE}Выберите действие:${COLOR_RESET}"
+    echo -e "${COLOR_GREEN}1${COLOR_RESET} - Установить ноду"
+    echo -e "${COLOR_GREEN}2${COLOR_RESET} - Запустить ноду"
+    echo -e "${COLOR_GREEN}3${COLOR_RESET} - Остановить ноду"
+    echo -e "${COLOR_GREEN}4${COLOR_RESET} - Рестарт ноды"
+    echo -e "${COLOR_GREEN}5${COLOR_RESET} - Удалить ноду"
+    echo -e "${COLOR_GREEN}6${COLOR_RESET} - Помощь"
+
+    read -p "Введите номер действия: " action
+    case $action in
+        1)
             prepare_server
             check_docker_installed
             install_node
             ;;
-        remove)
+        2)
+            run_accuser
+            ;;
+        3)
+            stop_accuser
+            ;;
+        4)
+            restart_accuser
+            ;;
+        5)
             remove_node
             ;;
-        final)
-            run_final_step
-            ;;
-        help)
+        6)
             display_help
             ;;
         *)
-            log "${COLOR_YELLOW}Использование: $0 {install|remove|final|help}${COLOR_RESET}"
+            log "${COLOR_YELLOW}Некорректный ввод. Пожалуйста, выберите действие от 1 до 6.${COLOR_RESET}"
             ;;
     esac
 }
