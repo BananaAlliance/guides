@@ -62,6 +62,28 @@ install_docker() {
     check_and_install_package "docker-ce"
 }
 
+# Функция для просмотра логов контейнера
+view_logs() {
+    log "${COLOR_BLUE}📄 Просмотр логов контейнера...${COLOR_RESET}"
+    docker logs -f nillion
+}
+
+# Функция для вывода данных из credentials.json
+display_credentials() {
+    log "${COLOR_BLUE}🔑 Данные credentials.json...${COLOR_RESET}"
+    if [ -f "$HOME/nillion/accuser/credentials.json" ]; then
+        priv_key=$(jq -r '.priv_key' $HOME/nillion/accuser/credentials.json)
+        pub_key=$(jq -r '.pub_key' $HOME/nillion/accuser/credentials.json)
+        address=$(jq -r '.address' $HOME/nillion/accuser/credentials.json)
+
+        log "Private Key: ${COLOR_YELLOW}$priv_key${COLOR_RESET}"
+        log "Public Key: ${COLOR_YELLOW}$pub_key${COLOR_RESET}"
+        log "Address: ${COLOR_YELLOW}$address${COLOR_RESET}"
+    else
+        handle_error "Файл credentials.json не найден."
+    fi
+}
+
 # Установка ноды Nillion
 install_node() {
     log "${COLOR_BLUE}🚀 Устанавливаем ноду Nillion...${COLOR_RESET}"
@@ -85,17 +107,18 @@ run_accuser() {
     echo -e "${COLOR_YELLOW}Введите номер блока для запуска (например, 5159667):${COLOR_RESET}"
     read block_start
 
-    docker run -d -v $HOME/nillion/accuser:/var/tmp nillion/retailtoken-accuser:v1.0.0 accuse --rpc-endpoint "https://testnet-nillion-rpc.lavenderfive.com" --block-start $block_start
-    log "${COLOR_GREEN}🎉 Процесс accuser запущен в screen сессии 'nillion_accuser'.${COLOR_RESET}"
+    docker run --name nillion -d -v ./nillion/accuser:/var/tmp nillion/retailtoken-accuser:v1.0.0 accuse --rpc-endpoint "https://testnet-nillion-rpc.lavenderfive.com" --block-start $block_start
+    log "${COLOR_GREEN}🎉 Процесс accuser запущен.${COLOR_RESET}"
 
     echo $(date +%s) > $HOME/nillion/accuser/timestamp
 }
 
 # Функция остановки процесса accuser
 stop_accuser() {
-    log "${COLOR_BLUE}🛑 Останавливаем процесс accuser...${COLOR_RESET}"
-    screen -S nillion_accuser -X quit || handle_error "Не удалось остановить процесс accuser."
-    log "${COLOR_GREEN}✅ Процесс accuser успешно остановлен.${COLOR_RESET}"
+    log "${COLOR_BLUE}🛑 Останавливаем процесс nillion...${COLOR_RESET}"
+    docker stop nillion
+    docker rm nillion
+    log "${COLOR_GREEN}✅ Процесс nillion успешно остановлен.${COLOR_RESET}"
 }
 
 # Функция рестарта процесса accuser
@@ -121,7 +144,6 @@ confirm_removal() {
 # Удаление ноды
 remove_node() {
     confirm_removal
-
     log "${COLOR_RED}🗑️ Удаление ноды...${COLOR_RESET}"
     docker rm -f $(docker ps -a -q --filter ancestor=nillion/retailtoken-accuser:v1.0.0) || handle_error "Не удалось удалить контейнеры ноды."
     rm -rf $HOME/nillion || handle_error "Не удалось удалить директорию с данными ноды."
@@ -141,15 +163,17 @@ display_help() {
 
 # Основная функция управления
 main() {
+        # Обновленное меню
     log "${COLOR_BLUE}Выберите действие:${COLOR_RESET}"
     echo -e "${COLOR_GREEN}1${COLOR_RESET} - Установить ноду"
     echo -e "${COLOR_GREEN}2${COLOR_RESET} - Запустить ноду"
     echo -e "${COLOR_GREEN}3${COLOR_RESET} - Остановить ноду"
     echo -e "${COLOR_GREEN}4${COLOR_RESET} - Рестарт ноды"
-    echo -e "${COLOR_GREEN}5${COLOR_RESET} - Удалить ноду"
-    echo -e "${COLOR_GREEN}6${COLOR_RESET} - Помощь"
+    echo -e "${COLOR_GREEN}5${COLOR_RESET} - Просмотреть логи ноды"
+    echo -e "${COLOR_GREEN}6${COLOR_RESET} - Вывести данные credentials.json"
+    echo -e "${COLOR_GREEN}7${COLOR_RESET} - Помощь"
 
-    read -p "Введите номер действия: " action
+    # Обновленный блок case
     case $action in
         1)
             prepare_server
@@ -166,13 +190,16 @@ main() {
             restart_accuser
             ;;
         5)
-            remove_node
+            view_logs
             ;;
         6)
+            display_credentials
+            ;;
+        7)
             display_help
             ;;
         *)
-            log "${COLOR_YELLOW}Некорректный ввод. Пожалуйста, выберите действие от 1 до 6.${COLOR_RESET}"
+            log "${COLOR_YELLOW}Некорректный ввод. Пожалуйста, выберите действие от 1 до 7.${COLOR_RESET}"
             ;;
     esac
 }
