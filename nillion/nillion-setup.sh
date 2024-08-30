@@ -163,7 +163,7 @@ display_help() {
 
 # Основная функция управления
 main() {
-        # Обновленное меню
+    # Обновленное меню
     log "${COLOR_BLUE}Выберите действие:${COLOR_RESET}"
     echo -e "${COLOR_GREEN}1${COLOR_RESET} - Установить ноду"
     echo -e "${COLOR_GREEN}2${COLOR_RESET} - Запустить ноду"
@@ -172,6 +172,9 @@ main() {
     echo -e "${COLOR_GREEN}5${COLOR_RESET} - Просмотреть логи ноды"
     echo -e "${COLOR_GREEN}6${COLOR_RESET} - Вывести данные credentials.json"
     echo -e "${COLOR_GREEN}7${COLOR_RESET} - Помощь"
+
+    # Считываем выбор пользователя
+    read -p "Введите номер действия: " action
 
     # Обновленный блок case
     case $action in
@@ -202,6 +205,7 @@ main() {
             log "${COLOR_YELLOW}Некорректный ввод. Пожалуйста, выберите действие от 1 до 7.${COLOR_RESET}"
             ;;
     esac
+}esac
 }
 
 # Запуск основного процесса
