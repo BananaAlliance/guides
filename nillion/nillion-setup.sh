@@ -85,7 +85,7 @@ run_accuser() {
     echo -e "${COLOR_YELLOW}Введите номер блока для запуска (например, 5159667):${COLOR_RESET}"
     read block_start
 
-    screen -dmS nillion_accuser docker run -v $HOME/nillion/accuser:/var/tmp nillion/retailtoken-accuser:v1.0.0 accuse --rpc-endpoint "https://testnet-nillion-rpc.lavenderfive.com" --block-start $block_start
+    docker run -d -v $HOME/nillion/accuser:/var/tmp nillion/retailtoken-accuser:v1.0.0 accuse --rpc-endpoint "https://testnet-nillion-rpc.lavenderfive.com" --block-start $block_start
     log "${COLOR_GREEN}🎉 Процесс accuser запущен в screen сессии 'nillion_accuser'.${COLOR_RESET}"
 
     echo $(date +%s) > $HOME/nillion/accuser/timestamp
