@@ -4,6 +4,107 @@ CONFIG_FILE="$HOME/chasm/scouts.ini"
 LOG_FILE="install_log_$(date +%F).log"
 SPINNER="/-\|"
 
+
+# Функция для проверки формата WEBHOOK_API_KEY
+validate_webhook_api_key() {
+    local key="$1"
+    if [[ ! $key =~ ^[A-Za-z0-9+/=]{32,44}$ ]]; then
+        return 1  # Неверный формат
+    else
+        return 0  # Верный формат
+    fi
+}
+
+# Функция для ввода и проверки WEBHOOK_API_KEY
+prompt_for_webhook_api_key() {
+    while true; do
+        read -p $'\e[33m🔑 Введите WEBHOOK_API_KEY: \e[0m' WEBHOOK_API_KEY
+        
+        # Проверка корректности WEBHOOK_API_KEY
+        if validate_webhook_api_key "$WEBHOOK_API_KEY"; then
+            break  # Если ключ верен, выходим из цикла
+        else
+            echo -e "\e[31m❌ Неверный формат WEBHOOK_API_KEY. Попробуйте снова.\e[0m"
+        fi
+    done
+}
+
+
+add_scouts_from_file() {
+    local file_path="$(dirname "$0")/scouts.txt"
+    local all_success=true  # Флаг успешного выполнения
+
+    echo -e "\e[36m🔍 Проверка наличия файла '$file_path'...\e[0m"
+    if [ ! -f "$file_path" ]; then
+        echo -e "\e[31m❌ Файл '$file_path' не найден. Убедитесь, что он существует рядом со скриптом.\e[0m"
+        exit 1
+    fi
+
+    echo -e "\e[36m📂 Чтение файла скаутов...\e[0m"
+    while IFS= read -r line || [ -n "$line" ]; do
+        # Проверка на пустую строку
+        if [ -z "$line" ]; then
+            echo -e "\е[33м⚠️ Обнаружена пустая строка. Пропуск...\е[0m"
+            continue
+        fi
+
+        # Проверка правильности формата строки
+        if [[ ! "$line" =~ ^[0-9]+:[A-Za-z0-9+/=]+$ ]]; then
+            echo -e "\е[31м❌ Неверный формат строки: '$line'. Пропуск...\е[0m"
+            all_success=false  # Отмечаем, что была ошибка
+            continue
+        fi
+
+        IFS=':' read -r scout_id scout_key <<< "$line"
+
+        # Генерация имени скаута
+        SCOUT_NAME=$(generate_scout_name)
+
+        # Проверка на наличие скаута с таким именем в конфигурационном файле
+        if grep -qP "^\[$SCOUT_NAME\]" "$CONFIG_FILE"; then
+            echo -e "\е[33м⚠️ Скаут '$SCOUT_NAME' уже существует в конфигурации. Пропуск...\е[0m"
+            continue
+        fi
+
+        # Проверка и запрос GROQ_API_KEY
+        if [ -f "$HOME/chasm/.env" ] && grep -q "GROQ_API_KEY=" "$HOME/chasm/.env"; then
+            GROQ_API_KEY=$(grep "GROQ_API_KEY=" "$HOME/chasm/.env" | cut -d'=' -f2)
+        elif [ -f "$HOME/chasm/GROQ_API_KEY.env" ]; then
+            source "$HOME/chasm/GROQ_API_KEY.env"
+            GROQ_API_KEY=${GROQ_API_KEY}
+        else
+            read -p $'\e[33m🛠️ Введите GROQ_API_KEY: \e[0m' GROQ_API_KEY
+            mkdir -p $HOME/chasm
+            echo "GROQ_API_KEY=$GROQ_API_KEY" > $HOME/chasm/GROQ_API_KEY.env
+        fi
+
+        # Создание .env файла и добавление скаута в конфигурацию
+        SCOUT_UID="$scout_id"
+        WEBHOOK_API_KEY="$scout_key"
+        create_env_file  # Вызов функции создания .env файла
+
+        echo -e "\е[32м✅ Скаут '$SCOUT_NAME' успешно добавлен с портом $SCOUT_PORT.\е[0m"
+
+        # Автоматический запуск добавленного скаута
+        echo -e "\е[36м🚀 Запуск скаута '$SCOUT_NAME'...\е[0m"
+        docker run -d --restart=always --env-file "$HOME/chasm/.env_$SCOUT_NAME" -p "$SCOUT_PORT:$SCOUT_PORT" --name "scout_$SCOUT_NAME" chasmtech/chasm-scout
+
+        if [ $? -eq 0 ]; then
+            echo -e "\е[32м✅ Скаут '$SCOUT_NAME' успешно запущен на порту $SCOUT_PORT.\е[0m"
+        else
+            echo -e "\е[31м❌ Не удалось запустить скаута '$SCOUT_NAME'. Пожалуйста, проверьте логи Docker для получения деталей.\е[0m"
+            all_success=false  # Отмечаем, что была ошибка
+        fi
+
+    done < "$file_path"
+
+    if [ "$all_success" = true ]; then
+        echo -e "\е[32м🎉 Все скауты из файла '$file_path' были успешно добавлены и запущены!\е[0m"
+    else
+        echo -e "\е[31м⚠️ Были ошибки при добавлении некоторых скаутов. Проверьте лог для деталей.\е[0m"
+    fi
+}
+
 # Функция для перезапуска выбранного скаута
 restart_selected_scout() {
     echo -e "\e[36mДоступные скауты:\e[0m"
@@ -339,7 +440,7 @@ prompt_user_input() {
 
     SCOUT_NAME=$(generate_scout_name)  # Автоматически генерируем имя скаута
     read -p $'\e[33m🔐 Введите SCOUT_UID: \e[0m' SCOUT_UID
-    read -p $'\e[33m🔑 Введите WEBHOOK_API_KEY: \e[0m' WEBHOOK_API_KEY
+    prompt_for_webhook_api_key
 }
 
 get_external_ip() {
@@ -457,8 +558,10 @@ main() {
     echo -e "\e[1;33m3)\e[0m \e[32mПерезапустить конкретного скаута\e[0m"
     echo -e "\e[1;33m4)\e[0m \e[32mСписок всех работающих скаутов и проверка статусов\e[0m"
     echo -e "\e[1;33m5)\e[0m \e[32mОбновить всех скаутов\e[0m"
+    echo -e "\e[1;33m6)\e[0m \e[32mДобавить скаутов из файла\e[0m"
     echo -e "\e[1;34m─────────────────────────────────────────────\e[0m"
-    read -p $'\e[33mВыберите опцию (1, 2, 3, 4 или 5): \e[0m' ACTION_CHOICE
+    read -p $'\e[33mВыберите опцию (1, 2, 3, 4, 5 или 6): \e[0m' ACTION_CHOICE
+
 
     if [ "$ACTION_CHOICE" == "1" ]; then
         # Добавление нового скаута
@@ -497,6 +600,9 @@ main() {
         setup_chasm_directory
         update_all_scouts
         log "\e[32m✅ Все скауты были успешно обновлены!\e[0m"
+        exit 0
+     elif [ "$ACTION_CHOICE" == "6" ]; then
+        add_scouts_from_file
         exit 0
     else
         echo -e "\e[31mНеверный выбор. Выход...\e[0m"
