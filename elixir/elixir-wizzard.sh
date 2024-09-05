@@ -198,7 +198,7 @@ start_node() {
             --env-file "$ENV_FILE" \
             --name elixir \
             --restart unless-stopped \
-            elixirprotocol/validator:3.1.0 || handle_error "Не удалось запустить ноду Elixir."
+            elixirprotocol/validator:v3 || handle_error "Не удалось запустить ноду Elixir."
         log "${COLOR_GREEN}✔️ Нода Elixir успешно запущена!${COLOR_RESET}"
     fi
 }
