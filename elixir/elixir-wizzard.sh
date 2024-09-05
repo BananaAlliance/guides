@@ -42,6 +42,43 @@ check_and_install_docker() {
     fi
 }
 
+# Функция для обновления ноды
+update_node() {
+    ENV_DIR="$HOME/.elixir"
+    ENV_FILE="$ENV_DIR/.env"
+
+    # Проверяем, существует ли контейнер ноды
+    if ! docker ps -a --format '{{.Names}}' | grep -qw "elixir"; then
+        log "${COLOR_RED}❌ Нода не установлена. Пожалуйста, сначала выполните установку ноды.${COLOR_RESET}"
+        exit 1
+    fi
+
+    # Проверяем наличие файла .env
+    if [ ! -f "$ENV_FILE" ]; then
+        log "${COLOR_YELLOW}⚠️ Файл .env не найден. Создаем новый .env файл...${COLOR_RESET}"
+        prompt_user_input
+        create_env_file
+    fi
+
+    log "${COLOR_BLUE}🛑 Остановка текущей ноды...${COLOR_RESET}"
+    docker stop elixir || handle_error "Не удалось остановить ноду Elixir."
+
+    log "${COLOR_RED}🗑 Удаление старого контейнера...${COLOR_RESET}"
+    docker rm elixir || handle_error "Не удалось удалить контейнер Elixir."
+
+    log "${COLOR_BLUE}📥 Загрузка новой версии Docker-образа...${COLOR_RESET}"
+    docker pull elixirprotocol/validator:v3 || handle_error "Не удалось загрузить новый Docker-образ."
+
+    log "${COLOR_BLUE}🚀 Запуск новой версии ноды...${COLOR_RESET}"
+    docker run -d \
+        --env-file "$ENV_FILE" \
+        --name elixir \
+        --restart unless-stopped \
+        elixirprotocol/validator:v3 || handle_error "Не удалось запустить новую версию ноды Elixir."
+
+    log "${COLOR_GREEN}✔️ Нода успешно обновлена и перезапущена!${COLOR_RESET}"
+}
+
 # Функция для запроса данных у пользователя
 prompt_user_input() {
     read -p $'\e[34mВведите имя ноды: \e[0m' NODE_NAME
@@ -91,14 +128,14 @@ EOF
 # Функция для запуска ноды
 run_elixir_node() {
     log "${COLOR_BLUE}🔄 Загрузка Docker-образа elixirprotocol/validator:3.1.0...${COLOR_RESET}"
-    docker pull elixirprotocol/validator:3.1.0 || handle_error "Не удалось загрузить Docker-образ."
+    docker pull elixirprotocol/validator:v3 || handle_error "Не удалось загрузить Docker-образ."
 
     log "${COLOR_BLUE}🚀 Запуск ноды Elixir...${COLOR_RESET}"
     docker run -d \
         --env-file "$ENV_FILE" \
         --name elixir \
         --restart unless-stopped \
-        elixirprotocol/validator:3.1.0 || handle_error "Не удалось запустить ноду Elixir."
+        elixirprotocol/validator:v3 || handle_error "Не удалось запустить ноду Elixir."
 
     log "${COLOR_GREEN}✔️  Нода Elixir успешно запущена!${COLOR_RESET}"
 }
@@ -123,6 +160,7 @@ manage_node_menu() {
 
     log "  2) Перезапустить ноду"
     log "  3) Выйти"
+    log "  4) Обновить ноду"
 
     read -p $'\e[34mВыберите действие: \e[0m' ACTION
 
@@ -139,6 +177,9 @@ manage_node_menu() {
             ;;
         3)
             log "${COLOR_GREEN}Выход из меню управления.${COLOR_RESET}"
+            ;;
+        4)
+            update_node
             ;;
         *)
             log "${COLOR_RED}Неверный выбор. Попробуйте снова.${COLOR_RESET}"
