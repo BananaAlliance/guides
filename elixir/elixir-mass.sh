@@ -16,7 +16,7 @@ echo "" > "$ERROR_LOG"  # Очищаем файл ошибок
 MAX_ATTEMPTS=3
 PARALLEL_JOBS=5  # Количество параллельных установок
 
-SCRIPT_VERSION=1.0.1
+SCRIPT_VERSION="1.0.1"
 
 self_update() {
     # URL скрипта на GitHub
