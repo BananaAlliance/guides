@@ -20,7 +20,7 @@ SCRIPT_VERSION=1.0.1
 
 self_update() {
     # URL скрипта на GitHub
-    REPO_URL="https://raw.githubusercontent.com/BananaAlliance/guides/main/elixir/elixir-wizzard.sh"
+    REPO_URL="https://github.com/BananaAlliance/guides/raw/main/elixir/elixir-mass.sh"
 
     # Получаем удаленную версию скрипта
     REMOTE_VERSION=$(curl -s $REPO_URL | grep "SCRIPT_VERSION=" | cut -d '"' -f 2)
