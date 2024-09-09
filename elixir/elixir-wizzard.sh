@@ -9,8 +9,6 @@ COLOR_BLUE="\e[34m"
 
 SCRIPT_VERSION="1.0.1"
 
-
-
 # Логирование
 log() {
     echo -e "$1"
@@ -22,6 +20,38 @@ handle_error() {
     exit 1
 }
 
+
+self_update() {
+    # URL скрипта на GitHub
+    REPO_URL="https://raw.githubusercontent.com/BananaAlliance/guides/main/elixir/elixir-wizzard.sh"
+
+    # Получаем удаленную версию скрипта
+    REMOTE_VERSION=$(curl -s $REPO_URL | grep "SCRIPT_VERSION=" | cut -d '"' -f 2)
+
+    if [ "$SCRIPT_VERSION" != "$REMOTE_VERSION" ]; then
+        log "${COLOR_YELLOW}⚠️ Доступна новая версия скрипта ($REMOTE_VERSION). Обновляем...${COLOR_RESET}"
+
+        # Скачиваем новую версию во временный файл
+        TEMP_SCRIPT=$(mktemp)
+        wget -O "$TEMP_SCRIPT" "$REPO_URL" || handle_error "Не удалось загрузить обновление."
+
+        # Замена текущего скрипта на новый
+        mv "$TEMP_SCRIPT" "$0" || handle_error "Не удалось обновить скрипт."
+        chmod +x "$0"
+
+        log "${COLOR_GREEN}✔️ Скрипт успешно обновлен до версии $REMOTE_VERSION.${COLOR_RESET}"
+
+        # Перезапускаем скрипт после обновления
+        exec "$0" "$@"
+    else
+        log "${COLOR_GREEN}✔️ У вас уже установлена последняя версия скрипта (${SCRIPT_VERSION}).${COLOR_RESET}"
+    fi
+}
+
+
+
+
+self_update
 # Функция проверки и установки пакета
 check_and_install_package() {
     if ! dpkg -l | grep -qw "$1"; then
