@@ -60,7 +60,6 @@ handle_error() {
 }
 
 self_update
-
 # Функция проверки и установки пакета
 check_and_install_package() {
     if ! dpkg -l | grep -qw "$1"; then
