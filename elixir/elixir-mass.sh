@@ -160,6 +160,34 @@ retry_failed_servers() {
     fi
 }
 
+# Функция для обновления ноды на сервере
+update_node_on_server() {
+    local IP=$1
+    local USER=$2
+    local PASSWORD=$3
+
+    LOG_FILE="$LOG_DIR/$IP-update.log"
+
+    log "${COLOR_BLUE}🔄 Обновляем ноду на сервере $IP...${COLOR_RESET}"
+
+    # Подключаемся по SSH и выполняем команды, сохраняя вывод в лог
+    sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 "$USER@$IP" <<EOF &> "$LOG_FILE"
+        echo "🌐 Подключены к серверу $IP..."
+
+        # Остановка и удаление старого контейнера
+        docker stop elixir || echo "⚠️ Контейнер уже остановлен."
+        docker rm elixir || echo "⚠️ Контейнер не найден."
+
+        # Обновление Docker-образа
+        docker pull elixirprotocol/validator:v3
+
+        # Перезапуск контейнера с новой версией
+        docker run -d --env-file "\$HOME/.elixir/.env" --name elixir --restart unless-stopped elixirprotocol/validator:v3
+
+        echo "✔️ Нода успешно обновлена на $IP!"
+EOF
+}
+
 # Параллельный запуск установки с ограничением количества одновременных процессов
 install_in_parallel() {
     while IFS=':' read -r IP USER PASSWORD NODE_NAME METAMASK_ADDRESS PRIVATE_KEY; do
@@ -185,7 +213,29 @@ install_in_parallel() {
     wait  # Ожидание завершения всех фоновых процессов
 }
 
-# Основной процесс
-install_in_parallel
-retry_failed_servers
-echo "Установка нод завершена на всех серверах!"
+# Основной процесс на основе аргументов
+if [ "$1" == "install" ]; then
+    log "${COLOR_BLUE}🚀 Начало установки нод на всех серверах...${COLOR_RESET}"
+    install_in_parallel
+    retry_failed_servers
+    log "${COLOR_GREEN}✔️ Установка нод завершена на всех серверах!${COLOR_RESET}"
+elif [ "$1" == "update" ]; then
+    log "${COLOR_BLUE}🔄 Начало обновления нод на всех серверах...${COLOR_RESET}"
+    while IFS=':' read -r IP USER PASSWORD NODE_NAME METAMASK_ADDRESS PRIVATE_KEY; do
+        ATTEMPTS=0
+        while [ $ATTEMPTS -lt $MAX_ATTEMPTS ]; do
+            update_node_on_server "$IP" "$USER" "$PASSWORD" && break
+            ATTEMPTS=$((ATTEMPTS + 1))
+            handle_error $ATTEMPTS "Не удалось обновить ноду на сервере $IP"
+        done
+
+        if [ $ATTEMPTS -eq $MAX_ATTEMPTS ]; then
+            log "${COLOR_RED}❌ Обновление ноды на сервере $IP провалилось после $MAX_ATTEMPTS попыток.${COLOR_RESET}"
+            echo "$IP:$USER:$PASSWORD" >> "$ERROR_LOG"  # Записываем сервер в лог ошибок
+        fi
+    done < "$SERVERS_FILE"
+    log "${COLOR_GREEN}✔️ Обновление нод завершено на всех серверах!${COLOR_RESET}"
+else
+    log "${COLOR_RED}❌ Неизвестный аргумент. Используйте 'install' для установки или 'update' для обновления.${COLOR_RESET}"
+    exit 1
+fi
