@@ -20,10 +20,15 @@ SCRIPT_VERSION="1.0.1"
 
 self_update() {
     # URL скрипта на GitHub
-    REPO_URL="https://github.com/BananaAlliance/guides/raw/main/elixir/elixir-mass.sh"
+    REPO_URL="https://raw.githubusercontent.com/BananaAlliance/guides/main/elixir/elixir-mass.sh"
 
     # Получаем удаленную версию скрипта
-    REMOTE_VERSION=$(curl -s $REPO_URL | grep "SCRIPT_VERSION=" | cut -d '"' -f 2)
+    REMOTE_VERSION=$(curl -s $REPO_URL | grep -Eo 'SCRIPT_VERSION="[0-9]+\.[0-9]+\.[0-9]+"' | cut -d '"' -f 2)
+
+    if [ -z "$REMOTE_VERSION" ]; then
+        log "${COLOR_RED}❌ Не удалось получить версию удаленного скрипта.${COLOR_RESET}"
+        exit 1
+    fi
 
     if [ "$SCRIPT_VERSION" != "$REMOTE_VERSION" ]; then
         log "${COLOR_YELLOW}⚠️ Доступна новая версия скрипта ($REMOTE_VERSION). Обновляем...${COLOR_RESET}"
