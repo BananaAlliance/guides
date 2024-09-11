@@ -8,6 +8,8 @@ echo -e "${BRIGHT_GREEN}--------------------------------------------------------
 curl -s https://raw.githubusercontent.com/BananaAlliance/tools/main/logo.sh | bash
 echo -e "${BRIGHT_GREEN}-----------------------------------------------------------------------------${NC}"
 
+sudo apt install apt-transport-https ca-certificates curl software-properties-common build-essential -qy
+
 function print_step() {
   echo -e "${BRIGHT_GREEN}==================================================${NC}"
   echo -e "${GREEN}$1${NC}"
@@ -32,7 +34,7 @@ function spinner() {
 
 # Функция для отображения анимированного баннера
 function print_banner() {
-  echo -e "${GREEN}🌟🌟🌟 Добро пожаловать в установщик Infernet Node 🌟🌟🌟${NC}"
+  echo -e "${GREEN}🌟🌟🌟 Добро пожаловать в установщик Ritual Node 🌟🌟🌟${NC}"
   sleep 1
   echo -e "${GREEN}Этот скрипт поможет вам установить и настроить все необходимые компоненты.${NC}"
   echo -e "${GREEN}Пожалуйста, следите за инструкциями на экране для лучшего опыта.${NC}"
