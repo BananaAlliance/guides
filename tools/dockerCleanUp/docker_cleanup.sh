@@ -12,6 +12,9 @@ RED="\033[31m"
 CYAN="\033[36m"
 RESET="\033[0m"
 
+# Путь к скрипту
+SCRIPT_PATH=$(realpath $0)
+
 echo -e "${CYAN}🚀 Начало очистки Docker...${RESET}"
 
 # Шаг 1: Очистка неактивных контейнеров
@@ -56,5 +59,17 @@ find /var/lib/docker/overlay2/ -type d -size $MIN_SIZE | while read dir; do
         echo -e "🔗 Слой ${layer_id} используется. Пропускаем..."
     fi
 done
+
+# Шаг 7: Проверка и добавление в cron
+CRON_JOB="0 3 * * 0 $SCRIPT_PATH"
+(crontab -l | grep -F "$SCRIPT_PATH") &>/dev/null
+
+if [ $? -eq 0 ]; then
+    echo -e "${GREEN}🕒 Задание в cron уже существует. Пропускаем добавление.${RESET}"
+else
+    echo -e "${CYAN}🕒 Добавление задания в cron для еженедельной очистки...${RESET}"
+    (crontab -l 2>/dev/null; echo "$CRON_JOB") | crontab -
+    echo -e "${GREEN}✅ Задание добавлено в cron.${RESET}"
+fi
 
 echo -e "${GREEN}🎉 Очистка Docker завершена!${RESET}"
