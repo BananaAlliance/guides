@@ -19,6 +19,8 @@ NODE="🖥️"
 INFO="ℹ️"
 WALLET="👛"
 
+SCRIPT_VERSION="1.0.0"
+
 # Функция для отображения заголовка
 show_header() {
     clear
@@ -119,7 +121,12 @@ install_rivalz() {
     check_error
     echo -e "${SUCCESS} ${GREEN}Rivalz успешно установлен!${NC}"
 
-    set_evm_address
+    show_separator
+    echo -e "${INFO} ${YELLOW}Важно: Нода не запущена автоматически.${NC}"
+    echo -e "${INFO} ${YELLOW}Для настройки и запуска ноды выполните следующую команду:${NC}"
+    echo -e "${CYAN}rivalz run${NC}"
+    echo -e "${INFO} ${YELLOW}Эта команда запросит необходимые данные, включая EVM адрес кошелька.${NC}"
+    show_separator
 }
 
 create_service_file() {
@@ -147,6 +154,9 @@ EOF"
     sudo systemctl daemon-reload
     sudo systemctl enable rivalz
     echo -e "${SUCCESS} ${GREEN}Сервис создан и настроен.${NC}"
+    echo -e "${INFO} ${YELLOW}Примечание: Сервис не будет запущен автоматически.${NC}"
+    echo -e "${INFO} ${YELLOW}Для настройки и запуска ноды выполните команду:${NC}"
+    echo -e "${CYAN}rivalz run${NC}"
 }
 
 # Функция для отображения статуса ноды
@@ -241,47 +251,6 @@ manage_node() {
     done
 }
 
-# Функция для проверки валидности EVM адреса
-is_valid_evm_address() {
-    local address=$1
-    if [[ $address =~ ^0x[a-fA-F0-9]{40}$ ]]; then
-        return 0
-    else
-        return 1
-    fi
-}
-
-# Функция для запроса и сохранения EVM адреса
-set_evm_address() {
-    show_header
-    echo -e "${WALLET} ${CYAN}Настройка EVM кошелька${NC}"
-    show_separator
-
-    while true; do
-        read -p "Введите ваш EVM адрес кошелька: " evm_address
-        if is_valid_evm_address "$evm_address"; then
-            mkdir -p $HOME/.rivalz
-            echo "$evm_address" > $HOME/.rivalz/wallet.txt
-            echo -e "${SUCCESS} ${GREEN}EVM адрес успешно сохранен.${NC}"
-            break
-        else
-            echo -e "${ERROR} ${RED}Неверный формат EVM адреса. Попробуйте снова.${NC}"
-        fi
-    done
-}
-
-# Функция для изменения EVM адреса
-change_evm_address() {
-    set_evm_address
-    if is_node_running; then
-        echo -e "${PROGRESS} ${YELLOW}Перезапуск ноды...${NC}"
-        sudo systemctl restart rivalz
-        echo -e "${SUCCESS} ${GREEN}Нода перезапущена с новым адресом кошелька.${NC}"
-    else
-        echo -e "${INFO} ${BLUE}Нода не запущена. Новый адрес будет использован при следующем запуске.${NC}"
-    fi
-}
-
 # Функция обновления ноды
 update_node() {
     show_header
@@ -304,6 +273,38 @@ update_node() {
     echo -e "${SUCCESS} ${GREEN}Нода Rivalz успешно обновлена и перезапущена!${NC}"
 }
 
+self_update() {
+    # URL скрипта на GitHub
+    REPO_URL="https://raw.githubusercontent.com/BananaAlliance/guides/main/rivalz/rivalz-wizzard.sh"
+
+    # Получаем удаленную версию скрипта
+    REMOTE_VERSION=$(curl -s $REPO_URL | grep -Eo 'SCRIPT_VERSION="[0-9]+\.[0-9]+\.[0-9]+"' | cut -d '"' -f 2)
+
+    if [ -z "$REMOTE_VERSION" ]; then
+        echo -e "${ERROR} ${RED}Не удалось получить версию удаленного скрипта.${NC}"
+        return 1
+    fi
+
+    if [ "$SCRIPT_VERSION" != "$REMOTE_VERSION" ]; then
+        echo -e "${WARNING} ${YELLOW}Доступна новая версия скрипта ($REMOTE_VERSION). Обновляем...${NC}"
+
+        # Скачиваем новую версию во временный файл
+        TEMP_SCRIPT=$(mktemp)
+        wget -O "$TEMP_SCRIPT" "$REPO_URL" || { echo -e "${ERROR} ${RED}Не удалось загрузить обновление.${NC}"; return 1; }
+
+        # Замена текущего скрипта на новый
+        mv "$TEMP_SCRIPT" "$0" || { echo -e "${ERROR} ${RED}Не удалось обновить скрипт.${NC}"; return 1; }
+        chmod +x "$0"
+
+        echo -e "${CHECKMARK} ${GREEN}Скрипт успешно обновлен до версии $REMOTE_VERSION.${NC}"
+
+        # Перезапускаем скрипт после обновления
+        exec "$0" "$@"
+    else
+        echo -e "${CHECKMARK} ${GREEN}У вас уже установлена последняя версия скрипта (${SCRIPT_VERSION}).${NC}"
+    fi
+}
+
 # Обновленное главное меню
 main_menu() {
     while true; do
@@ -319,19 +320,20 @@ main_menu() {
                 echo "2. Просмотреть логи ${INFO}"
                 echo "3. Остановить ноду ${ERROR}"
                 echo "4. Информация о системе ${INFO}"
-                echo "5. Изменить EVM адрес ${WALLET}"
-                echo "6. Обновить ноду ${PROGRESS}"
+                echo "5. Обновить ноду ${PROGRESS}"
+                echo "6. Обновить скрипт ${PROGRESS}"
             else
                 echo "1. Запустить ноду ${CHECKMARK}"
                 echo "2. Просмотреть логи ${INFO}"
                 echo "3. Удалить ноду ${ERROR}"
                 echo "4. Информация о системе ${INFO}"
-                echo "5. Изменить EVM адрес ${WALLET}"
-                echo "6. Обновить ноду ${PROGRESS}"
+                echo "5. Обновить ноду ${PROGRESS}"
+                echo "6. Обновить скрипт ${PROGRESS}"
             fi
         else
             echo "1. Установить ноду ${INSTALL}"
             echo "2. Информация о системе ${INFO}"
+            echo "3. Обновить скрипт ${PROGRESS}"
         fi
 
         echo "0. Выйти ${ERROR}"
@@ -344,8 +346,8 @@ main_menu() {
                     if is_node_running; then
                         manage_node
                     else
-                        sudo systemctl start rivalz
-                        echo -e "${CHECKMARK} ${GREEN}Нода запущена.${NC}"
+                        echo -e "${INFO} ${YELLOW}Для настройки и запуска ноды выполните команду:${NC}"
+                        echo -e "${CYAN}rivalz run${NC}"
                     fi
                 else
                     install_packages
@@ -368,6 +370,8 @@ main_menu() {
                     else
                         remove_node
                     fi
+                else
+                    self_update
                 fi
                 ;;
             4)
@@ -375,14 +379,16 @@ main_menu() {
                 ;;
             5)
                 if is_node_installed; then
-                    change_evm_address
+                    update_node
+                else
+                    echo -e "${ERROR} ${RED}Нода не установлена. Сначала установите ноду.${NC}"
                 fi
                 ;;
             6)
                 if is_node_installed; then
-                    update_node
+                    self_update
                 else
-                    echo -e "${ERROR} ${RED}Нода не установлена. Сначала установите ноду.${NC}"
+                    echo -e "${ERROR} ${RED}Неверный выбор!${NC}"
                 fi
                 ;;
             0)
@@ -397,6 +403,9 @@ main_menu() {
         read -p "Нажмите Enter, чтобы продолжить"
     done
 }
+
+# Запуск обновления скрипта перед запуском главного меню
+self_update
 
 # Запуск главного меню
 main_menu
