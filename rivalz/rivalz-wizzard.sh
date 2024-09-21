@@ -19,7 +19,7 @@ NODE="🖥️"
 INFO="ℹ️"
 WALLET="👛"
 
-SCRIPT_VERSION="1.0.0"
+SCRIPT_VERSION="1.0.1"
 
 # Функция для отображения заголовка
 show_header() {
@@ -107,9 +107,93 @@ install_packages() {
     check_installed "htop"
 }
 
+# Функция для проверки системных требований
+check_system_requirements() {
+    local required_cpu=$1
+    local required_ram=$2  # в ГБ
+    local required_disk=$3 # в ГБ
+    local node_name=$4
+
+    echo -e "${BLUE}${INFO} Проверка системных требований для ноды $node_name...${NC}"
+    echo -e "${BLUE}---------------------------------------------------${NC}"
+
+    # Получаем информацию о системе
+    local cpu_cores=$(nproc)
+    local total_ram=$(free -g | awk '/^Mem:/{print $2}')
+    local free_disk=$(df -BG / | awk 'NR==2 {print $4}' | sed 's/G//')
+
+    # Проверяем CPU
+    if [ $cpu_cores -ge $required_cpu ]; then
+        echo -e "${GREEN}${CHECKMARK} CPU: $cpu_cores ядер (требуется $required_cpu)${NC}"
+        local cpu_status="OK"
+    else
+        echo -e "${RED}${ERROR} CPU: $cpu_cores ядер (требуется $required_cpu)${NC}"
+        local cpu_status="Недостаточно"
+    fi
+
+    # Проверяем RAM
+    if [ $total_ram -ge $required_ram ]; then
+        echo -e "${GREEN}${CHECKMARK} RAM: $total_ram ГБ (требуется $required_ram ГБ)${NC}"
+        local ram_status="OK"
+    else
+        echo -e "${RED}${ERROR} RAM: $total_ram ГБ (требуется $required_ram ГБ)${NC}"
+        local ram_status="Недостаточно"
+    fi
+
+    # Проверяем диск
+    if [ $free_disk -ge $required_disk ]; then
+        echo -e "${GREEN}${CHECKMARK} Свободное место на диске: $free_disk ГБ (требуется $required_disk ГБ)${NC}"
+        local disk_status="OK"
+    else
+        echo -e "${RED}${ERROR} Свободное место на диске: $free_disk ГБ (требуется $required_disk ГБ)${NC}"
+        local disk_status="Недостаточно"
+    fi
+
+    echo -e "${BLUE}---------------------------------------------------${NC}"
+
+    # Определяем общий статус совместимости
+    if [[ $cpu_status == "OK" && $ram_status == "OK" && $disk_status == "OK" ]]; then
+        echo -e "${GREEN}${CHECKMARK} Статус: Полностью совместимо${NC}"
+        return 0
+    elif [[ $cpu_status == "OK" && $ram_status == "OK" && $disk_status == "Недостаточно" ]]; then
+        echo -e "${YELLOW}${WARNING} Статус: Совместимо, но рекомендуется увеличить объем диска${NC}"
+        return 1
+    elif [[ $cpu_status == "OK" && $ram_status == "Недостаточно" ]]; then
+        echo -e "${YELLOW}${WARNING} Статус: Совместимо с ограничениями (недостаточно RAM)${NC}"
+        return 2
+    else
+        echo -e "${RED}${ERROR} Статус: Несовместимо${NC}"
+        return 3
+    fi
+}
+
 # Функция установки Rivalz
 install_rivalz() {
     show_header
+    echo -e "${NODE} ${GREEN}Проверка системных требований для Rivalz...${NC}"
+    show_separator
+
+    check_system_requirements 4 4 50 "Rivalz"
+    compatibility_status=$?
+
+    case $compatibility_status in
+        0)
+            echo -e "${GREEN}Система полностью совместима. Продолжаем установку.${NC}"
+            ;;
+        1|2)
+            echo -e "${YELLOW}Система не полностью соответствует требованиям. Продолжить установку? (y/n)${NC}"
+            read -r answer
+            if [[ ! $answer =~ ^[Yy]$ ]]; then
+                echo -e "${RED}Установка отменена.${NC}"
+                return
+            fi
+            ;;
+        3)
+            echo -e "${RED}Система несовместима. Установка невозможна.${NC}"
+            return
+            ;;
+    esac
+
     echo -e "${NODE} ${GREEN}Устанавливаем Rivalz...${NC}"
     show_separator
 
