@@ -430,8 +430,14 @@ main_menu() {
                     if is_node_running; then
                         manage_node
                     else
-                        echo -e "${INFO} ${YELLOW}Для настройки и запуска ноды выполните команду:${NC}"
-                        echo -e "${CYAN}rivalz run${NC}"
+                        echo -e "${PROGRESS} ${YELLOW}Запускаем ноду Rivalz...${NC}"
+                        sudo systemctl start rivalz
+                        sleep 2
+                        if is_node_running; then
+                            echo -e "${CHECKMARK} ${GREEN}Нода Rivalz успешно запущена.${NC}"
+                        else
+                            echo -e "${ERROR} ${RED}Не удалось запустить ноду. Проверьте логи для получения дополнительной информации.${NC}"
+                        fi
                     fi
                 else
                     install_packages
