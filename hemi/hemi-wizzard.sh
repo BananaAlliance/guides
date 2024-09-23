@@ -19,7 +19,7 @@ NODE="🖥️"
 INFO="ℹ️"
 WALLET="👛"
 
-SCRIPT_VERSION="1.0.4"
+SCRIPT_VERSION="1.0.5"
 NODE_DOWNLOAD_URL="https://github.com/hemilabs/heminetwork/releases/download/v0.4.3/heminetwork_v0.4.3_linux_amd64.tar.gz"
 
 # Функция для отображения заголовка
@@ -353,6 +353,7 @@ main_menu() {
     while true; do
         show_header
         echo -e "${SUCCESS} ${GREEN}Добро пожаловать в мастер установки Hemi!${NC}"
+        echo -e "${SUCCESS} ${GREEN}Версия скрипта: ${SCRIPT_VERSION}"
         show_separator
         show_node_status
         show_separator
