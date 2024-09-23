@@ -19,7 +19,7 @@ NODE="🖥️"
 INFO="ℹ️"
 WALLET="👛"
 
-SCRIPT_VERSION="1.0.0"
+SCRIPT_VERSION="1.0.4"
 NODE_DOWNLOAD_URL="https://github.com/hemilabs/heminetwork/releases/download/v0.4.3/heminetwork_v0.4.3_linux_amd64.tar.gz"
 
 # Функция для отображения заголовка
@@ -31,6 +31,34 @@ show_header() {
     echo ""
 }
 
+# Функция для отображения статуса ноды
+show_node_status() {
+    if is_node_installed; then
+        if is_node_running; then
+            echo -e "${CHECKMARK} ${GREEN}Статус ноды: Установлена и запущена${NC}"
+        else
+            echo -e "${WARNING} ${YELLOW}Статус ноды: Установлена, но не запущена${NC}"
+        fi
+    else
+        echo -e "${ERROR} ${RED}Статус ноды: Не установлена${NC}"
+    fi
+}
+
+
+# Функция для отображения информации о системе
+show_system_info() {
+    show_header
+    echo -e "${INFO} ${CYAN}Информация о системе:${NC}"
+    show_separator
+    echo -e "${YELLOW}Операционная система:${NC} $(uname -s)"
+    echo -e "${YELLOW}Версия ядра:${NC} $(uname -r)"
+    echo -e "${YELLOW}Процессор:${NC} $(lscpu | grep 'Model name' | cut -f 2 -d ":")"
+    echo -e "${YELLOW}Оперативная память:${NC} $(free -h | awk '/^Mem:/ {print $2}')"
+    echo -e "${YELLOW}Свободное место на диске:${NC} $(df -h / | awk '/\// {print $4}')"
+    show_separator
+    read -p "Нажмите Enter, чтобы вернуться в главное меню"
+}
+
 # Функция для отображения разделителя
 show_separator() {
     echo -e "${BLUE}--------------------------------------${NC}"
@@ -38,7 +66,7 @@ show_separator() {
 
 # Проверка, установлена ли нода
 is_node_installed() {
-    if command -v ./popmd &> /dev/null; then
+    if command -v $HOME/heminetwork_v0.4.3_linux_amd64/popmd &> /dev/null; then
         return 0
     else
         return 1
@@ -234,6 +262,9 @@ create_service_file() {
 
     HEMI_PATH=$(pwd)/popmd
 
+    PRIVATE_KEY=$(cat $HOME/popm-address.json | grep "private_key" | awk -F '"' '{print $4}')
+
+
     sudo bash -c "cat << EOF > /etc/systemd/system/hemi.service
 [Unit]
 Description=Hemi Node
@@ -242,7 +273,7 @@ After=network.target
 [Service]
 User=$(whoami)
 Environment=PATH=/usr/local/bin:/usr/bin:/bin
-Environment=POPM_BTC_PRIVKEY=$POPM_BTC_PRIVKEY
+Environment=POPM_BTC_PRIVKEY=$PRIVATE_KEY
 Environment=POPM_STATIC_FEE=50
 Environment=POPM_BFG_URL=wss://testnet.rpc.hemi.network/v1/ws/public
 ExecStart=$HEMI_PATH
