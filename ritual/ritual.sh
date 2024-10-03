@@ -16,6 +16,39 @@ function print_step() {
   echo -e "${BRIGHT_GREEN}==================================================${NC}"
 }
 
+self_update() {
+    # URL скрипта на GitHub
+    REPO_URL="https://raw.githubusercontent.com/BananaAlliance/guides/main/ritual/rivalz.sh"
+
+    # Получаем удаленную версию скрипта
+    REMOTE_VERSION=$(curl -s $REPO_URL | grep -Eo 'SCRIPT_VERSION="[0-9]+\.[0-9]+\.[0-9]+"' | cut -d '"' -f 2)
+
+    if [ -z "$REMOTE_VERSION" ]; then
+        echo -e "${ERROR} ${RED}Не удалось получить версию удаленного скрипта.${NC}"
+        return 1
+    fi
+
+    if [ "$SCRIPT_VERSION" != "$REMOTE_VERSION" ]; then
+        echo -e "${WARNING} ${YELLOW}Доступна новая версия скрипта ($REMOTE_VERSION). Обновляем...${NC}"
+
+        # Скачиваем новую версию во временный файл
+        TEMP_SCRIPT=$(mktemp)
+        wget -O "$TEMP_SCRIPT" "$REPO_URL" || { echo -e "${ERROR} ${RED}Не удалось загрузить обновление.${NC}"; return 1; }
+
+        # Замена текущего скрипта на новый
+        mv "$TEMP_SCRIPT" "$0" || { echo -e "${ERROR} ${RED}Не удалось обновить скрипт.${NC}"; return 1; }
+        chmod +x "$0"
+
+        echo -e "${CHECKMARK} ${GREEN}Скрипт успешно обновлен до версии $REMOTE_VERSION.${NC}"
+
+        # Перезапускаем скрипт после обновления
+        exec "$0" "$@"
+    else
+        echo -e "${CHECKMARK} ${GREEN}У вас уже установлена последняя версия скрипта (${SCRIPT_VERSION}).${NC}"
+    fi
+}
+
+
 function spinner() {
   local pid=$1
   local delay=0.1
@@ -239,6 +272,8 @@ install_node() {
     setup_service
     echo -e "✅ Установка Ritual Node завершена!"
 }
+
+self_update
 
 case "$1" in
   install)
