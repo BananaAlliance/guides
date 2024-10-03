@@ -4,6 +4,8 @@ GREEN='\033[0;32m'
 BRIGHT_GREEN='\033[1;32m'
 NC='\033[0m'  # No Color
 
+SCRIPT_VERSION="1.1.2"
+
 echo -e "${BRIGHT_GREEN}-----------------------------------------------------------------------------${NC}"
 curl -s https://raw.githubusercontent.com/BananaAlliance/tools/main/logo.sh | bash
 echo -e "${BRIGHT_GREEN}-----------------------------------------------------------------------------${NC}"
