@@ -19,7 +19,7 @@ NODE="🖥️"
 INFO="ℹ️"
 LOGS="📜"
 
-SCRIPT_VERSION="1.0.3"
+SCRIPT_VERSION="1.0.4"
 OCEAN_NODE_DIR="$HOME/ocean-node"
 DOCKER_COMPOSE_FILE="$OCEAN_NODE_DIR/docker-compose.yml"
 DOCKER_CONTAINER_NAME="ocean-node"
@@ -50,9 +50,9 @@ progress_bar() {
 
 # Функция для проверки системных требований
 check_system_requirements() {
-    local required_cpu=2  # минимальное количество CPU ядер
-    local required_ram=4  # минимальный объем оперативной памяти (в ГБ)
-    local required_disk=20 # минимальный объем свободного места на диске (в ГБ)
+    local required_cpu=1  # минимальное количество CPU ядер
+    local required_ram=2  # минимальный объем оперативной памяти (в ГБ)
+    local required_disk=4 # минимальный объем свободного места на диске (в ГБ)
     local node_name="Ocean Node"
 
     echo -e "${BLUE}${INFO} Проверка системных требований для ноды $node_name...${NC}"

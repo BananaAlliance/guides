@@ -16,7 +16,6 @@ function print_step() {
   echo -e "${BRIGHT_GREEN}==================================================${NC}"
 }
 
-# Функция для отображения анимированного спиннера
 function spinner() {
   local pid=$1
   local delay=0.1
@@ -32,7 +31,6 @@ function spinner() {
   printf "    \b\b\b\b"
 }
 
-# Функция для отображения анимированного баннера
 function print_banner() {
   echo -e "${GREEN}🌟🌟🌟 Добро пожаловать в установщик Ritual Node 🌟🌟🌟${NC}"
   sleep 1
@@ -41,7 +39,6 @@ function print_banner() {
   echo ""
 }
 
-# Обработка ошибок с подробным сообщением
 function handle_error() {
   local step=$1
   echo -e "${BRIGHT_GREEN}⚠️ Произошла ошибка на этапе: '$step'${NC}"
@@ -49,17 +46,8 @@ function handle_error() {
   exit 1
 }
 
-# Функция для установки Forge
-install_forge() {
-  print_step "Установка Forge"
-  curl -L https://foundry.paradigm.xyz | bash
-  source /root/.bashrc
-  foundryup
-}
-
-# Функция для проверки и установки Docker
 install_docker() {
-  print_step "Проверка и установка Docker"
+  print_step "🐳 Проверка и установка Docker"
   if ! command -v docker &> /dev/null; then
     echo -e "${GREEN}🐳 Docker не найден, начинаем установку...${NC}"
     sudo apt update && sudo apt upgrade -y
@@ -74,9 +62,8 @@ install_docker() {
   fi
 }
 
-# Функция для клонирования и настройки репозитория
 setup_repository() {
-  print_step "Настройка репозитория"
+  print_step "📦 Настройка репозитория"
   if ! command -v jq &> /dev/null; then
     echo -e "${GREEN}jq не установлен. Попытка установить jq...${NC}"
     sudo apt-get update && sudo apt-get install -y jq || handle_error "Установка jq"
@@ -86,15 +73,6 @@ setup_repository() {
   rm -rf infernet-container-starter
   git clone --recurse-submodules https://github.com/ritual-net/infernet-container-starter || handle_error "Клонирование репозитория"
 
-  docker_compose_file="/root/infernet-container-starter/deploy/docker-compose.yaml"
-
-   # Изменение портов в docker-compose.yaml
-  sed -i 's/8545:3000/8545:3051/' "$docker_compose_file"
-  sed -i 's/--port 3000/--port 3051/' "$docker_compose_file"
-  sed -i 's/3000:3000/3051:3051/' "$docker_compose_file"
-  sed -i 's/--bind=0.0.0.0:3000/--bind=0.0.0.0:3051/' "$docker_compose_file"
-
-
   cd infernet-container-starter
 
   screen -ls | grep "ritual" | cut -d. -f1 | awk '{print $1}' | xargs -I {} screen -S {} -X quit
@@ -103,75 +81,43 @@ setup_repository() {
   sleep 15
 }
 
-# Функция для обновления файлов конфигурации
 update_config_files() {
-  print_step "Обновление файлов конфигурации"
+  print_step "🔧 Обновление файлов конфигурации"
+  
   echo -e "${GREEN}Введите ваш приватный ключ:${NC}"
   read private_key
   sleep 10
   [[ "$private_key" != "0x"* ]] && private_key="0x$private_key"
 
   config_file="/root/infernet-container-starter/deploy/config.json"
-  docker_compose_file="/root/infernet-container-starter/deploy/docker-compose.yaml"
+  config_file_2="/root/infernet-container-starter/projects/hello-world/container/config.json"
 
-   # Изменение портов в docker-compose.yaml
-  sed -i 's/8545:3000/8545:3051/' "$docker_compose_file"
-  sed -i 's/--port 3000/--port 3051/' "$docker_compose_file"
-  sed -i 's/3000:3000/3051:3051/' "$docker_compose_file"
-  sed -i 's/--bind=0.0.0.0:3000/--bind=0.0.0.0:3051/' "$docker_compose_file"
-
- 
-
-
-  if [ $? -eq 0 ]; then
-    echo -e "${GREEN}Порт успешно изменен на 3051 в файле docker-compose.yaml.${NC}"
-  else
-    echo -e "${GREEN}Произошла ошибка при изменении порта.${NC}"
-  fi
-
+  # Обновляем config_file
   sed -i "s|\"registry_address\":.*|\"registry_address\": \"0x3B1554f346DFe5c482Bb4BA31b880c1C18412170\",|" "$config_file"
   sed -i "s|\"rpc_url\":.*|\"rpc_url\": \"https://base-rpc.publicnode.com\",|" "$config_file"
   sed -i "s|\"private_key\":.*|\"private_key\": \"$private_key\"|" "$config_file"
-  sed -i 's/"port": "3000"/"port": "3051"/' "$config_file"
-  sed -i 's/--bind=0.0.0.0:3000/--bind=0.0.0.0:3051/' "$config_file"
 
-   # Новое значение для поля "snapshot_sync"
   snapshot_sync_value='{"snapshot_sync": {"sleep": 5, "batch_size": 50}}'
-
-    # Обновление или добавление поля "snapshot_sync" с помощью sed
   sed -i '/"snapshot_sync": {/c\'"$snapshot_sync_value" "$config_file"
 
+  # Обновляем config_file_2
+  sed -i "s|\"registry_address\":.*|\"registry_address\": \"0x3B1554f346DFe5c482Bb4BA31b880c1C18412170\",|" "$config_file_2"
+  sed -i "s|\"rpc_url\":.*|\"rpc_url\": \"https://base-rpc.publicnode.com\",|" "$config_file_2"
+  sed -i "s|\"private_key\":.*|\"private_key\": \"$private_key\"|" "$config_file_2"
+
+  sed -i '/"snapshot_sync": {/c\'"$snapshot_sync_value" "$config_file_2"
+
+  # Обновляем Makefile
   new_rpc_url="https://base-rpc.publicnode.com"
   sed -i "/^# anvil's third default address$/,/^# deploying the contract$/s|sender := .*|sender := $private_key|" ~/infernet-container-starter/projects/hello-world/contracts/Makefile
   sed -i "/^# anvil's third default address$/,/^# deploying the contract$/s|RPC_URL := .*|RPC_URL := $new_rpc_url|" ~/infernet-container-starter/projects/hello-world/contracts/Makefile
+
+  # Обновляем Deploy.s.sol
   sed -i "s|address registry.*|address registry = 0x3B1554f346DFe5c482Bb4BA31b880c1C18412170;|" ~/infernet-container-starter/projects/hello-world/contracts/script/Deploy.s.sol
 }
 
-# Функция для обновления порта в файле config.json
-update_port() {
-  print_step "Обновление порта в файле config.json"
-  local config_file="/root/infernet-container-starter/deploy/config.json"
-  if ! command -v jq &> /dev/null; then
-    echo -e "${GREEN}jq не установлен. Попытка установить jq...${NC}"
-    sudo apt-get update && sudo apt-get install -y jq || handle_error "Установка jq"
-  fi
-
-  echo -e "${GREEN}Начинаем обновление порта в конфигурационном файле.${NC}"
-  local temp_file=$(mktemp)
-  jq '.containers[] | select(.id == "hello-world") | .port = "3051" | .command = "--bind=0.0.0.0:3051 --workers=2"' "$config_file" > "$temp_file" && mv "$temp_file" "$config_file"
-  if [ $? -eq 0 ]; then
-    echo -e "${GREEN}Порт успешно обновлен на 3051.${NC}"
-  else
-    echo -e "${GREEN}Произошла ошибка при обновлении порта.${NC}"
-    return 1
-  fi
-  restart_docker_services
-  echo -e "${GREEN}Обновление завершено.${NC}"
-}
-
-# Функция для развертывания и обновления конфигурации
 deploy_and_update_config() {
-  print_step "Развертывание и обновление конфигурации"
+  print_step "🚀 Развертывание и обновление конфигурации"
   cd ~/infernet-container-starter
   output=$(make deploy-contracts project=hello-world 2>&1)
   echo "$output"
@@ -186,15 +132,14 @@ deploy_and_update_config() {
   config_file="$HOME/infernet-container-starter/deploy/config.json"
   jq --arg addr "$contract_address" '.containers[0].allowed_addresses = [$addr]' "$config_file" > temp.json && mv temp.json "$config_file"
   solidity_file="$HOME/infernet-container-starter/projects/hello-world/contracts/script/CallContract.s.sol"
-    sed -i "s|SaysGM(.*);|SaysGM($contract_address);|" "$solidity_file"
-    restart_docker_services
-    echo -e "${GREEN}Solidity файл обновлен с новым адресом контракта.${NC}"
-    make call-contract project=hello-world
+  sed -i "s|SaysGM(.*);|SaysGM($contract_address);|" "$solidity_file"
+  restart_docker_services
+  echo -e "${GREEN}Solidity файл обновлен с новым адресом контракта.${NC}"
+  make call-contract project=hello-world
 }
 
-# Функция для настройки сервиса
 setup_service() {
-    print_step "Настройка сервиса"
+    print_step "🛠️ Настройка сервиса"
     local script_url="https://github.com/BananaAlliance/guides/raw/main/ritual/monitor_logs.sh"
     local script_path="/usr/local/bin/monitor_logs.sh"
     local service_path="/etc/systemd/system/monitor_logs.service"
@@ -225,31 +170,24 @@ EOF
     echo -e "${GREEN}Сервис успешно настроен и запущен.${NC}"
 }
 
-# Функция для перезапуска Docker сервисов
 restart_docker_services() {
-    print_step "Перезапуск Docker сервисов"
+    print_step "🔄 Перезапуск Docker сервисов"
     sleep 20
-    docker restart infernet-anvil
-    docker restart infernet-node
-    docker restart hello-world
-    docker restart deploy-node-1
-    docker restart deploy-fluentbit-1
-    docker restart deploy-redis-1
+    docker compose -f $HOME/infernet-container-starter/deploy/docker-compose.yaml down
+    docker compose -f $HOME/infernet-container-starter/deploy/docker-compose.yaml up -d
 }
 
-# Функция для обновления ноды
 update_node() {
-    print_step "Обновление ноды"
+    print_step "🔄 Обновление ноды"
     cd ~/infernet-container-starter/deploy || handle_error "Переход в директорию"
-    sed -i '5s/.*/    image: ritualnetwork\/infernet-node:1.0.0/' docker-compose.yaml
     docker compose down
-    docker compose up
+    docker compose pull
+    docker compose up -d
     echo -e "${GREEN}Нода успешно обновлена.${NC}"
 }
 
-# Функция для удаления ноды
 uninstall_node() {
-    print_step "Удаление ноды"
+    print_step "🗑️ Удаление ноды"
     read -p "Вы уверены, что хотите удалить ноду Ritual? (y/n): " confirm
     if [[ $confirm != [yY] ]]; then
         echo -e "${GREEN}Удаление отменено.${NC}"
@@ -264,33 +202,47 @@ uninstall_node() {
     sudo systemctl daemon-reload
     sudo systemctl reset-failed
 
-    docker kill infernet-anvil
-    docker kill infernet-node
-    docker kill hello-world
-    docker kill deploy-node-1
-    docker kill deploy-fluentbit-1
-    docker kill deploy-redis-1
+    docker compose -f $HOME/infernet-container-starter/deploy/docker-compose.yaml down -v
 
     echo -e "${GREEN}Нода успешно удалена.${NC}"
 }
 
-# Основная функция для установки ноды
-install_node() {
-    print_banner
-    install_docker
-    setup_repository
-    update_config_files
-    deploy_and_update_config
-    setup_service
+fix_docker_compose() {
+    print_step "🔧 Исправление docker-compose"
+    cd $HOME/infernet-container-starter/deploy || handle_error "Переход в директорию"
+    
+    docker compose down
+    sleep 3
+    sudo rm -rf docker-compose.yaml
+    wget https://raw.githubusercontent.com/DOUBLE-TOP/guides/main/ritual/docker-compose.yaml
+    docker compose up -d
+    
+    docker rm -fv infernet-anvil &>/dev/null
+    
+    echo -e "${GREEN}Docker-compose успешно исправлен.${NC}"
 }
 
-# Обработка аргументов
+install_node() {
+    print_banner
+    echo -e "🚀 Начинаем установку Ritual Node..."
+    echo -e "1. 🐳 Установка Docker"
+    install_docker
+    echo -e "2. 📦 Настройка репозитория"
+    setup_repository
+    echo -e "3. 🔧 Исправление docker-compose"
+    fix_docker_compose
+    echo -e "4. 🔧 Обновление файлов конфигурации"
+    update_config_files
+    echo -e "5. 🚀 Развертывание и обновление конфигурации"
+    deploy_and_update_config
+    echo -e "6. 🛠️ Настройка сервиса"
+    setup_service
+    echo -e "✅ Установка Ritual Node завершена!"
+}
+
 case "$1" in
   install)
     install_node
-    ;;
-  update_port)
-    update_port
     ;;
   update)
     update_node
@@ -298,8 +250,15 @@ case "$1" in
   uninstall_node)
     uninstall_node
     ;;
+  fix)
+    fix_docker_compose
+    ;;
   *)
-    echo -e "${BRIGHT_GREEN}Использование: $0 {install | uninstall_node | update | update_port}${NC}"
+    echo -e "${BRIGHT_GREEN}Использование: $0 {install | uninstall_node | update | fix}${NC}"
+    echo -e "🚀 install        - Установить Ritual Node"
+    echo -e "🔄 update         - Обновить ноду"
+    echo -e "🗑️ uninstall_node - Удалить ноду"
+    echo -e "🔧 fix            - Исправить docker-compose"
     exit 1
     ;;
 esac
