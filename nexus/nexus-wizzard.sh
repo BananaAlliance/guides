@@ -130,32 +130,6 @@ EOF"
     echo -e "${SUCCESS} ${GREEN}Сервис создан и настроен.${NC}"
 }
 
-# Обновление ноды Nexus
-update_node() {
-    show_header
-    echo -e "${PROGRESS} ${YELLOW}Обновление ноды Nexus...${NC}"
-    show_separator
-
-    if is_node_running; then
-        echo -e "${INFO} ${BLUE}Останавливаем ноду для обновления...${NC}"
-        sudo systemctl stop nexus
-    fi
-
-    echo -e "${INSTALL} ${YELLOW}Обновляем репозиторий Nexus...${NC}"
-    (cd $HOME/nexus/network-api && git pull)
-    check_error
-
-    echo -e "${INSTALL} ${YELLOW}Пересобираем ноду...${NC}"
-    (cd $HOME/nexus/network-api/clients/cli && cargo build --release)
-    check_error
-
-    echo -e "${PROGRESS} ${YELLOW}Перезапускаем ноду...${NC}"
-    sudo systemctl start nexus
-    check_error
-
-    echo -e "${CHECKMARK} ${GREEN}Нода Nexus успешно обновлена и перезапущена!${NC}"
-}
-
 # Запуск/остановка/управление нодой
 manage_node() {
     while true; do
@@ -171,9 +145,6 @@ manage_node() {
         read -p "Выберите опцию (1-5): " option
 
         case $option in
-            1)
-                update_node
-                ;;
             1)
                 sudo systemctl start nexus
                 echo -e "${CHECKMARK} ${GREEN}Нода запущена.${NC}"
@@ -212,14 +183,12 @@ main_menu() {
                 echo "1. Управление нодой ${NODE}"
                 echo "2. Остановить ноду ${ERROR}"
                 echo "3. Просмотреть логи ${INFO}"
-                echo "4. Обновить ноду ${PROGRESS}"
-                echo "5. Выйти ${ERROR}"
+                echo "4. Выйти ${ERROR}"
             else
                 echo "1. Запустить ноду ${CHECKMARK}"
                 echo "2. Удалить ноду ${ERROR}"
                 echo "3. Просмотреть логи ${INFO}"
-                echo "4. Обновить ноду ${PROGRESS}"
-                echo "5. Выйти ${ERROR}"
+                echo "4. Выйти ${ERROR}"
             fi
         else
             echo "1. Установить ноду ${INSTALL}"
@@ -229,10 +198,6 @@ main_menu() {
         read -p "Выберите опцию: " choice
 
         case $choice in
-            1)
-                update_node
-                ;;
-            5)
             1)
                 if is_node_installed; then
                     if is_node_running; then
