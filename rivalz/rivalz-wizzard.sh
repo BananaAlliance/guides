@@ -499,3 +499,4 @@ self_update
 
 # Запуск главного меню
 main_menu
+

@@ -171,7 +171,7 @@ manage_node() {
         read -p "Выберите опцию (1-5): " option
 
         case $option in
-            4)
+            1)
                 update_node
                 ;;
             1)
@@ -229,7 +229,7 @@ main_menu() {
         read -p "Выберите опцию: " choice
 
         case $choice in
-            4)
+            1)
                 update_node
                 ;;
             5)
