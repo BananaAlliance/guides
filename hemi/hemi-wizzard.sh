@@ -69,7 +69,7 @@ show_separator() {
 
 # Проверка, установлена ли нода
 is_node_installed() {
-    if command -v $HOME/heminetwork_v0.4.3_linux_amd64/popmd &> /dev/null; then
+    if command -v $HOME/heminetwork/popmd &> /dev/null; then
         return 0
     else
         return 1
@@ -241,6 +241,9 @@ install_hemi() {
     # Записываем версию ноды в файл version.txt
     echo "${LATEST_NODE_VERSION}" > $HOME/heminetwork/version.txt
 
+
+    cd $HOME/heminetwork
+
     ./keygen -secp256k1 -json -net="testnet" > ~/popm-address.json
     check_error
 
@@ -352,10 +355,11 @@ check_node_version() {
             echo -e "${CHECKMARK} ${GREEN}Нода обновлена до последней версии.${NC}"
         fi
     else
-        echo -e "${ERROR} ${RED}Статус ноды: Не установлена${NC}"
+        # Если нода не установлена, просто выводим актуальную версию
         echo -e "${INFO} ${CYAN}Актуальная версия ноды: ${LATEST_NODE_VERSION}${NC}"
     fi
 }
+
 
 
 
