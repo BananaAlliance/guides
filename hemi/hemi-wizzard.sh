@@ -335,22 +335,28 @@ update_node() {
 }
 
 check_node_version() {
-    local installed_version
-    if [[ -f $HOME/heminetwork/version.txt ]]; then
-        installed_version=$(cat $HOME/heminetwork/version.txt)
-    else
-        installed_version="Не установлена"
-    fi
+    if is_node_installed; then
+        local installed_version
+        if [[ -f $HOME/heminetwork/version.txt ]]; then
+            installed_version=$(cat $HOME/heminetwork/version.txt)
+        else
+            installed_version="Неизвестно"
+        fi
 
-    echo -e "${INFO} ${CYAN}Установленная версия ноды: ${installed_version}${NC}"
-    echo -e "${INFO} ${CYAN}Актуальная версия ноды: ${LATEST_NODE_VERSION}${NC}"
+        echo -e "${INFO} ${CYAN}Установленная версия ноды: ${installed_version}${NC}"
+        echo -e "${INFO} ${CYAN}Актуальная версия ноды: ${LATEST_NODE_VERSION}${NC}"
 
-    if [[ "$installed_version" != "$LATEST_NODE_VERSION" ]]; then
-        echo -e "${WARNING} ${YELLOW}Доступна новая версия ноды (${LATEST_NODE_VERSION}). Рекомендуется обновить ноду.${NC}"
+        if [[ "$installed_version" != "$LATEST_NODE_VERSION" ]]; then
+            echo -e "${WARNING} ${YELLOW}Доступна новая версия ноды (${LATEST_NODE_VERSION}). Рекомендуется обновить ноду.${NC}"
+        else
+            echo -e "${CHECKMARK} ${GREEN}Нода обновлена до последней версии.${NC}"
+        fi
     else
-        echo -e "${CHECKMARK} ${GREEN}Нода обновлена до последней версии.${NC}"
+        echo -e "${ERROR} ${RED}Статус ноды: Не установлена${NC}"
+        echo -e "${INFO} ${CYAN}Актуальная версия ноды: ${LATEST_NODE_VERSION}${NC}"
     fi
 }
+
 
 
 
