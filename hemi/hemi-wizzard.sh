@@ -19,8 +19,11 @@ NODE="🖥️"
 INFO="ℹ️"
 WALLET="👛"
 
-SCRIPT_VERSION="1.0.5"
-NODE_DOWNLOAD_URL="https://github.com/hemilabs/heminetwork/releases/download/v0.4.3/heminetwork_v0.4.3_linux_amd64.tar.gz"
+SCRIPT_VERSION="1.1.0"
+# Установка актуальной версии ноды
+LATEST_NODE_VERSION="0.4.5"
+NODE_DOWNLOAD_URL="https://github.com/hemilabs/heminetwork/releases/download/v${LATEST_NODE_VERSION}/heminetwork_v${LATEST_NODE_VERSION}_linux_amd64.tar.gz"
+
 
 # Функция для отображения заголовка
 show_header() {
@@ -196,7 +199,6 @@ check_system_requirements() {
     fi
 }
 
-# Функция установки Hemi
 install_hemi() {
     show_header
     echo -e "${NODE} ${GREEN}Проверка системных требований для Hemi...${NC}"
@@ -226,11 +228,18 @@ install_hemi() {
     echo -e "${NODE} ${GREEN}Устанавливаем Hemi...${NC}"
     show_separator
 
-    wget $NODE_DOWNLOAD_URL
+    wget $NODE_DOWNLOAD_URL -O heminetwork_v${LATEST_NODE_VERSION}_linux_amd64.tar.gz
     check_error
 
-    tar -xvf heminetwork_v0.4.3_linux_amd64.tar.gz && rm heminetwork_v0.4.3_linux_amd64.tar.gz && cd heminetwork_v0.4.3_linux_amd64
+    tar -xvf heminetwork_v${LATEST_NODE_VERSION}_linux_amd64.tar.gz && rm heminetwork_v${LATEST_NODE_VERSION}_linux_amd64.tar.gz
     check_error
+
+    # Перемещаем распакованную папку в каталог установки
+    mv heminetwork_v${LATEST_NODE_VERSION}_linux_amd64 $HOME/heminetwork
+    check_error
+
+    # Записываем версию ноды в файл version.txt
+    echo "${LATEST_NODE_VERSION}" > $HOME/heminetwork/version.txt
 
     ./keygen -secp256k1 -json -net="testnet" > ~/popm-address.json
     check_error
@@ -254,6 +263,8 @@ install_hemi() {
     echo -e "${SUCCESS} ${GREEN}Hemi успешно установлен!${NC}"
     show_separator
 }
+
+
 
 create_service_file() {
     show_header
@@ -291,7 +302,6 @@ EOF"
     echo -e "${CYAN}sudo systemctl start hemi${NC}"
 }
 
-# Функция обновления ноды
 update_node() {
     show_header
     echo -e "${PROGRESS} ${YELLOW}Обновление ноды Hemi...${NC}"
@@ -302,19 +312,47 @@ update_node() {
         sudo systemctl stop hemi
     fi
 
-    echo -e "${INSTALL} ${YELLOW}Обновляем пакет heminetwork...${NC}"
-    wget $NODE_DOWNLOAD_URL
+    echo -e "${INSTALL} ${YELLOW}Обновляем пакет heminetwork до версии ${LATEST_NODE_VERSION}...${NC}"
+    wget $NODE_DOWNLOAD_URL -O heminetwork_v${LATEST_NODE_VERSION}_linux_amd64.tar.gz
     check_error
 
-    tar -xvf heminetwork_v0.4.3_linux_amd64.tar.gz && rm heminetwork_v0.4.3_linux_amd64.tar.gz && cd heminetwork_v0.4.3_linux_amd64
+    tar -xvf heminetwork_v${LATEST_NODE_VERSION}_linux_amd64.tar.gz && rm heminetwork_v${LATEST_NODE_VERSION}_linux_amd64.tar.gz
     check_error
+
+    # Перемещаем обновленную ноду в каталог установки
+    rm -rf $HOME/heminetwork
+    mv heminetwork_v${LATEST_NODE_VERSION}_linux_amd64 $HOME/heminetwork
+    check_error
+
+    # Записываем версию ноды в файл version.txt
+    echo "${LATEST_NODE_VERSION}" > $HOME/heminetwork/version.txt
 
     echo -e "${PROGRESS} ${YELLOW}Перезапускаем ноду...${NC}"
     sudo systemctl start hemi
     check_error
 
-    echo -e "${SUCCESS} ${GREEN}Нода Hemi успешно обновлена и перезапущена!${NC}"
+    echo -e "${SUCCESS} ${GREEN}Нода Hemi успешно обновлена до версии ${LATEST_NODE_VERSION} и перезапущена!${NC}"
 }
+
+check_node_version() {
+    local installed_version
+    if [[ -f $HOME/heminetwork/version.txt ]]; then
+        installed_version=$(cat $HOME/heminetwork/version.txt)
+    else
+        installed_version="Не установлена"
+    fi
+
+    echo -e "${INFO} ${CYAN}Установленная версия ноды: ${installed_version}${NC}"
+    echo -e "${INFO} ${CYAN}Актуальная версия ноды: ${LATEST_NODE_VERSION}${NC}"
+
+    if [[ "$installed_version" != "$LATEST_NODE_VERSION" ]]; then
+        echo -e "${WARNING} ${YELLOW}Доступна новая версия ноды (${LATEST_NODE_VERSION}). Рекомендуется обновить ноду.${NC}"
+    else
+        echo -e "${CHECKMARK} ${GREEN}Нода обновлена до последней версии.${NC}"
+    fi
+}
+
+
 
 self_update() {
     # URL скрипта на GitHub
@@ -356,6 +394,7 @@ main_menu() {
         echo -e "${SUCCESS} ${GREEN}Версия скрипта: ${SCRIPT_VERSION}"
         show_separator
         show_node_status
+        check_node_version
         show_separator
 
         if is_node_installed; then
