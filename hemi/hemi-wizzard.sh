@@ -19,7 +19,7 @@ NODE="🖥️"
 INFO="ℹ️"
 WALLET="👛"
 
-SCRIPT_VERSION="1.1.0"
+SCRIPT_VERSION="1.1.2"
 # Установка актуальной версии ноды
 LATEST_NODE_VERSION="0.4.5"
 NODE_DOWNLOAD_URL="https://github.com/hemilabs/heminetwork/releases/download/v${LATEST_NODE_VERSION}/heminetwork_v${LATEST_NODE_VERSION}_linux_amd64.tar.gz"
