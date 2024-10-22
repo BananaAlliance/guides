@@ -170,16 +170,54 @@ update_hemi() {
     echo -e "${SUCCESS} ${GREEN}Hemi успешно обновлена до версии ${LATEST_NODE_VERSION}.${NC}"
 }
 
+# Функция для отображения прогресс-бара
+show_progress() {
+    local duration=$1
+    local steps=$2
+    local step_duration=$(echo "scale=2; $duration / $steps" | bc)
+    local progress=0
+    while [ $progress -lt $steps ]
+    do
+        echo -ne "\rПрогресс: [${GREEN}"
+        for ((i=0; i<$progress; i++)); do echo -ne "#"; done
+        for ((i=$progress; i<$steps; i++)); do echo -ne "."; done
+        echo -ne "${NC}] $((progress * 100 / steps))%"
+        sleep $step_duration
+        ((progress++))
+    done
+    echo -ne "\rПрогресс: [${GREEN}";for ((i=0; i<$steps; i++)); do echo -ne "#"; done; echo -e "${NC}] 100%"
+}
+
 # Функция для массовой установки на все сервера из файла
 mass_action() {
     action=$1
+    total_servers=$(grep -v '^#' "$SERVERS_FILE" | grep -v '^$' | wc -l)
+    current_server=0
 
     while IFS=':' read -r IP USER PASSWORD; do
         # Пропускаем пустые строки и комментарии
         [[ -z "$IP" || "$IP" == \#* ]] && continue
 
-        log "${NODE} ${BLUE}Начинаем операцию на сервере: $IP${NC}"
+        ((current_server++))
+        log "${NODE} ${BLUE}Начинаем операцию на сервере: $IP (${current_server}/${total_servers})${NC}"
         
+        if [ "$action" == "install" ]; then
+            echo "Шаг 1/4: Установка необходимых пакетов"
+            show_progress 2 10
+            echo "Шаг 2/4: Установка Hemi"
+            show_progress 3 10
+            echo "Шаг 3/4: Генерация Bitcoin-адреса"
+            show_progress 1 10
+            echo "Шаг 4/4: Создание и запуск сервиса"
+            show_progress 2 10
+        elif [ "$action" == "remove" ]; then
+            echo "Удаление Hemi"
+            show_progress 5 10
+        elif [ "$action" == "update" ]; then
+            echo "Обновление Hemi"
+            show_progress 5 10
+        fi
+
         ADDR=$(sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 "$USER@$IP" bash <<EOF
             LATEST_NODE_VERSION="$LATEST_NODE_VERSION"
             NODE_DOWNLOAD_URL="https://github.com/hemilabs/heminetwork/releases/download/v\${LATEST_NODE_VERSION}/heminetwork_v\${LATEST_NODE_VERSION}_linux_amd64.tar.gz"
@@ -205,6 +243,7 @@ EOF
         fi
 
         log "${CHECKMARK} ${GREEN}Операция завершена на сервере: $IP${NC}"
+        echo ""
     done < "$SERVERS_FILE"
 }
 
