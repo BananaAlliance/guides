@@ -17,7 +17,7 @@ SUCCESS="🎉"
 WARNING="⚠️"
 NODE="🖥️"
 INFO="ℹ️"
-SCRIPT_VERSION="1.1.0"
+SCRIPT_VERSION="1.1.2"
 
 # Функция для отображения заголовка
 show_header() {
@@ -35,7 +35,7 @@ show_separator() {
 
 # Проверка, установлена ли нода
 is_node_installed() {
-    if docker ps -a --format '{{.Names}}' | grep -q "^orchestrator$"; then
+    if [ -d "$HOME/.nesa/" ]; then
         return 0
     else
         return 1
@@ -94,13 +94,16 @@ install_node() {
     show_header
     echo -e "${NODE} ${GREEN}Установка ноды Nesa...${NC}"
     show_separator
-    
+
+    # Установка зависимостей
+    install_dependencies
+
     # Открытие порта
     echo -e "${INFO} ${YELLOW}Открытие порта 31333...${NC}"
     sudo ufw allow 31333
     echo -e "${CHECKMARK} ${GREEN}Порт 31333 открыт.${NC}"
 
-    echo -e "${INFO} ${YELLOW}Сейчас будет запущена установка. Следуйте инструкциям.${NC}"
+    echo -e "${INFO} ${YELLOW}Сейчас будет запущена установка ноды. Следуйте инструкциям.${NC}"
     read -p "Нажмите Enter, чтобы продолжить..."
     bash <(curl -s https://raw.githubusercontent.com/nesaorg/bootstrap/master/bootstrap.sh)
     check_error
@@ -191,7 +194,6 @@ main_menu() {
                         restart_node
                     fi
                 else
-                    install_dependencies
                     install_node
                 fi
                 ;;
@@ -246,7 +248,7 @@ self_update() {
     REMOTE_VERSION=$(curl -s $REPO_URL | grep -Eo 'SCRIPT_VERSION="[0-9]+\.[0-9]+\.[0-9]+"' | cut -d '"' -f 2)
 
     if [ -z "$REMOTE_VERSION" ]; then
-        echo -e "${ERROR} ${RED}Не удалось получить версию удаленного скрипта.${NC}"
+        echo -e "${ERROR} ${RED}Не удалось получить версию удаленного скрипта.${NC}"Н
         return 1
     fi
 
