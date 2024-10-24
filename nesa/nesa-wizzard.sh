@@ -17,7 +17,7 @@ SUCCESS="🎉"
 WARNING="⚠️"
 NODE="🖥️"
 INFO="ℹ️"
-SCRIPT_VERSION="1.1.2"
+SCRIPT_VERSION="1.1.3"
 
 # Функция для отображения заголовка
 show_header() {
@@ -67,6 +67,66 @@ check_error() {
     fi
 }
 
+# Функция для проверки системных требований
+check_system_requirements() {
+    local required_cpu=$1
+    local required_ram=$2  # в ГБ
+    local required_disk=$3 # в ГБ
+    local node_name=$4
+
+    echo -e "${BLUE}${INFO} Проверка системных требований для ноды $node_name...${NC}"
+    echo -e "${BLUE}---------------------------------------------------${NC}"
+
+    # Получаем информацию о системе
+    local cpu_cores=$(nproc)
+    local total_ram=$(free -g | awk '/^Mem:/{print $2}')
+    local free_disk=$(df -BG / | awk 'NR==2 {print $4}' | sed 's/G//')
+
+    # Проверяем CPU
+    if [ $cpu_cores -ge $required_cpu ]; then
+        echo -e "${GREEN}${CHECKMARK} CPU: $cpu_cores ядер (требуется $required_cpu)${NC}"
+        local cpu_status="OK"
+    else
+        echo -e "${RED}${ERROR} CPU: $cpu_cores ядер (требуется $required_cpu)${NC}"
+        local cpu_status="Недостаточно"
+    fi
+
+    # Проверяем RAM
+    if [ $total_ram -ge $required_ram ]; then
+        echo -e "${GREEN}${CHECKMARK} RAM: $total_ram ГБ (требуется $required_ram ГБ)${NC}"
+        local ram_status="OK"
+    else
+        echo -e "${RED}${ERROR} RAM: $total_ram ГБ (требуется $required_ram ГБ)${NC}"
+        local ram_status="Недостаточно"
+    fi
+
+    # Проверяем диск
+    if [ $free_disk -ge $required_disk ]; then
+        echo -e "${GREEN}${CHECKMARK} Свободное место на диске: $free_disk ГБ (требуется $required_disk ГБ)${NC}"
+        local disk_status="OK"
+    else
+        echo -e "${RED}${ERROR} Свободное место на диске: $free_disk ГБ (требуется $required_disk ГБ)${NC}"
+        local disk_status="Недостаточно"
+    fi
+
+    echo -e "${BLUE}---------------------------------------------------${NC}"
+
+    # Определяем общий статус совместимости
+    if [[ $cpu_status == "OK" && $ram_status == "OK" && $disk_status == "OK" ]]; then
+        echo -e "${GREEN}${CHECKMARK} Статус: Полностью совместимо${NC}"
+        return 0
+    elif [[ $cpu_status == "OK" && $ram_status == "OK" && $disk_status == "Недостаточно" ]]; then
+        echo -e "${YELLOW}${WARNING} Статус: Совместимо, но рекомендуется увеличить объем диска${NC}"
+        return 1
+    elif [[ $cpu_status == "OK" && $ram_status == "Недостаточно" ]]; then
+        echo -e "${YELLOW}${WARNING} Статус: Совместимо с ограничениями (недостаточно RAM)${NC}"
+        return 2
+    else
+        echo -e "${RED}${ERROR} Статус: Несовместимо${NC}"
+        return 3
+    fi
+}
+
 # Установка зависимостей
 install_dependencies() {
     show_header
@@ -94,6 +154,8 @@ install_node() {
     show_header
     echo -e "${NODE} ${GREEN}Установка ноды Nesa...${NC}"
     show_separator
+
+    check_system_requirements 4 4 50 "Nesa"
 
     # Установка зависимостей
     install_dependencies
