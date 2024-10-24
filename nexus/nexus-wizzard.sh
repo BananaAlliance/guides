@@ -17,7 +17,7 @@ SUCCESS="🎉"
 WARNING="⚠️"
 NODE="🖥️"
 INFO="ℹ️"
-SCRIPT_VERSION="1.0.0"
+SCRIPT_VERSION="1.1.0"
 
 # Функция для отображения заголовка
 show_header() {
@@ -171,25 +171,40 @@ manage_node() {
     done
 }
 
-# Главное меню
+# Функция для получения статуса ноды
+get_node_status() {
+    if is_node_installed; then
+        if is_node_running; then
+            echo -e "${CHECKMARK} ${GREEN}Нода установлена и работает${NC}"
+        else
+            echo -e "${WARNING} ${YELLOW}Нода установлена, но не запущена${NC}"
+        fi
+    else
+        echo -e "${INFO} ${BLUE}Нода не установлена${NC}"
+    fi
+}
+
+# Обновленное главное меню
 main_menu() {
     while true; do
         show_header
         echo -e "${SUCCESS} ${GREEN}Добро пожаловать в мастер установки Nexus!${NC}"
+        echo -e "${INFO} Версия скрипта: ${SCRIPT_VERSION}"
+        show_separator
+        get_node_status
         show_separator
 
         if is_node_installed; then
             if is_node_running; then
-                echo "1. Управление нодой ${NODE}"
-                echo "2. Остановить ноду ${ERROR}"
-                echo "3. Просмотреть логи ${INFO}"
-                echo "4. Выйти ${ERROR}"
+                echo "1. Остановить ноду ${ERROR}"
+                echo "2. Перезапустить ноду ${PROGRESS}"
             else
                 echo "1. Запустить ноду ${CHECKMARK}"
                 echo "2. Удалить ноду ${ERROR}"
-                echo "3. Просмотреть логи ${INFO}"
-                echo "4. Выйти ${ERROR}"
             fi
+            echo "3. Просмотреть логи ${INFO}"
+            echo "4. Обновить ноду ${PROGRESS}"
+            echo "5. Выйти ${ERROR}"
         else
             echo "1. Установить ноду ${INSTALL}"
             echo "2. Выйти ${ERROR}"
@@ -201,7 +216,8 @@ main_menu() {
             1)
                 if is_node_installed; then
                     if is_node_running; then
-                        manage_node
+                        sudo systemctl stop nexus
+                        echo -e "${CHECKMARK} ${GREEN}Нода остановлена.${NC}"
                     else
                         sudo systemctl start nexus
                         sleep 2
@@ -219,8 +235,8 @@ main_menu() {
             2)
                 if is_node_installed; then
                     if is_node_running; then
-                        sudo systemctl stop nexus
-                        echo -e "${CHECKMARK} ${GREEN}Нода остановлена.${NC}"
+                        sudo systemctl restart nexus
+                        echo -e "${PROGRESS} ${GREEN}Нода перезапущена.${NC}"
                     else
                         sudo systemctl disable nexus
                         sudo rm -rf $HOME/nexus
@@ -234,9 +250,24 @@ main_menu() {
                 fi
                 ;;
             3)
-                view_logs
+                if is_node_installed; then
+                    view_logs
+                else
+                    echo -e "${ERROR} ${RED}Нода не установлена!${NC}"
+                fi
                 ;;
             4)
+                if is_node_installed; then
+                    echo -e "${PROGRESS} ${GREEN}Обновление ноды Nexus...${NC}"
+                    (cd $HOME/nexus/network-api && git pull)
+                    (cd $HOME/nexus/network-api/clients/cli && cargo build --release)
+                    sudo systemctl restart nexus
+                    echo -e "${CHECKMARK} ${GREEN}Нода Nexus успешно обновлена и перезапущена.${NC}"
+                else
+                    echo -e "${ERROR} ${RED}Нода не установлена!${NC}"
+                fi
+                ;;
+            5)
                 echo -e "${SUCCESS} ${GREEN}Спасибо за использование мастера установки Nexus!${NC}"
                 exit 0
                 ;;
