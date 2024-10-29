@@ -165,8 +165,6 @@ install_node() {
     sudo ufw allow 31333
     echo -e "${CHECKMARK} ${GREEN}Порт 31333 открыт.${NC}"
 
-    echo -e "${INFO} ${YELLOW}Сейчас будет запущена установка ноды. Следуйте инструкциям.${NC}"
-    read -p "Нажмите Enter, чтобы продолжить..."
     bash <(curl -s https://raw.githubusercontent.com/nesaorg/bootstrap/master/bootstrap.sh)
     check_error
     echo -e "${CHECKMARK} ${GREEN}Нода Nesa успешно установлена.${NC}"
