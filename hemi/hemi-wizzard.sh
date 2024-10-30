@@ -19,7 +19,7 @@ NODE="🖥️"
 INFO="ℹ️"
 WALLET="👛"
 
-SCRIPT_VERSION="1.1.2"
+SCRIPT_VERSION="1.1.5"
 # Установка актуальной версии ноды
 LATEST_NODE_VERSION="0.4.5"
 NODE_DOWNLOAD_URL="https://github.com/hemilabs/heminetwork/releases/download/v${LATEST_NODE_VERSION}/heminetwork_v${LATEST_NODE_VERSION}_linux_amd64.tar.gz"
@@ -288,7 +288,7 @@ After=network.target
 User=$(whoami)
 Environment=PATH=/usr/local/bin:/usr/bin:/bin
 Environment=POPM_BTC_PRIVKEY=$PRIVATE_KEY
-Environment=POPM_STATIC_FEE=50
+Environment=POPM_STATIC_FEE=4000
 Environment=POPM_BFG_URL=wss://testnet.rpc.hemi.network/v1/ws/public
 ExecStart=$HEMI_PATH
 Restart=always
@@ -301,8 +301,8 @@ EOF"
     sudo systemctl enable hemi
     echo -e "${SUCCESS} ${GREEN}Сервис создан и настроен.${NC}"
     echo -e "${INFO} ${YELLOW}Примечание: Сервис не будет запущен автоматически.${NC}"
-    echo -e "${INFO} ${YELLOW}Для настройки и запуска ноды выполните команду:${NC}"
-    echo -e "${CYAN}sudo systemctl start hemi${NC}"
+    echo -e "${INFO} ${YELLOW}Для настройки и запуска ноды запустите ноду из меню управления.${NC}"
+
 }
 
 update_node() {
